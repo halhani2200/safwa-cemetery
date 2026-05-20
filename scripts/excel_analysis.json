@@ -1,0 +1,119 @@
+{
+  "sheets": [
+    {
+      "name": "Sheet1",
+      "dimensions": "305 rows x 60 cols",
+      "headers": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "sample_rows": [
+        {
+          "None": "رقم البلاغ"
+        },
+        {
+          "None": 4400042335
+        },
+        {
+          "None": 4400043349
+        },
+        {
+          "None": "أ-1-3"
+        },
+        {
+          "None": "أ_1-4"
+        },
+        {
+          "None": 4400045179
+        },
+        {
+          "None": 4400045843
+        },
+        {
+          "None": 4400046003
+        },
+        {
+          "None": 440004091
+        }
+      ],
+      "non_empty_rows": 293
+    },
+    {
+      "name": "Sheet2",
+      "dimensions": "1 rows x 1 cols",
+      "headers": [
+        null
+      ],
+      "sample_rows": [],
+      "non_empty_rows": 0
+    },
+    {
+      "name": "Sheet3",
+      "dimensions": "1 rows x 1 cols",
+      "headers": [
+        null
+      ],
+      "sample_rows": [],
+      "non_empty_rows": 0
+    }
+  ],
+  "total_records": 293
+}

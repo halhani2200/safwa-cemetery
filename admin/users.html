@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>المستخدمون - مقبرة صفوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🕌</div>
+            <div><div class="sidebar-title">مقبرة صفوى</div><div class="sidebar-subtitle" id="userBadge">...</div></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/" class="nav-link"><span>📊</span><span>الرئيسية</span></a>
+            <a href="/admin/graves.html" class="nav-link"><span>🪦</span><span>إدارة القبور</span></a>
+            <a href="/staff/add.html" class="nav-link"><span>➕</span><span>إضافة قبر</span></a>
+            <a href="/map.html" class="nav-link" target="_blank"><span>🗺️</span><span>خريطة المقبرة</span></a>
+            <a href="/admin/announcements.html" class="nav-link"><span>⚰️</span><span>إعلانات الوفاة</span></a>
+            <a href="/admin/users.html" class="nav-link active"><span>👥</span><span>المستخدمون</span></a>
+            <a href="/admin/audit.html" class="nav-link"><span>📋</span><span>سجل النشاط</span></a>
+            <a href="/admin/reports.html" class="nav-link"><span>📝</span><span>بلاغات الأخطاء</span></a>
+            <a href="/admin/settings.html" class="nav-link"><span>⚙️</span><span>الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/" class="nav-link"><span>🌐</span><span>عرض الموقع</span></a>
+            <button onclick="logout()" class="nav-link logout-btn"><span>🚪</span><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>👥 إدارة المستخدمين</h1>
+            <p>الموظفون والمتطوعون اللي يقدرون يضيفون قبور</p>
+        </div>
+
+        <div class="card">
+            <div class="search-container">
+                <button class="btn btn-primary" onclick="openAddModal()">➕ إضافة مستخدم</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th><th>اسم المستخدم</th><th>الاسم الكامل</th><th>الدور</th>
+                            <th>الحالة</th><th>إضافاته</th><th>آخر دخول</th><th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable"><tr><td colspan="8" class="loading">جاري التحميل...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">➕ إضافة مستخدم</h3>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="userId">
+            <div class="form-group">
+                <label class="form-label">اسم المستخدم *</label>
+                <input type="text" class="form-input" id="username" autocomplete="off">
+                <small style="color:var(--text-light)">يستخدم لتسجيل الدخول (بدون مسافات)</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">الاسم الكامل</label>
+                <input type="text" class="form-input" id="full_name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">الدور *</label>
+                <select class="form-select" id="role">
+                    <option value="staff">موظف</option>
+                    <option value="volunteer">متطوع</option>
+                    <option value="admin">مدير</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">كلمة المرور *</label>
+                <input type="text" class="form-input" id="password" autocomplete="new-password">
+                <small style="color:var(--text-light)">6 أحرف على الأقل</small>
+            </div>
+            <div class="form-group" id="activeGroup" style="display:none">
+                <label><input type="checkbox" id="is_active" checked> الحساب نشط</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
+            <button class="btn btn-primary" onclick="saveUser()">💾 حفظ</button>
+        </div>
+    </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+let allUsers = [];
+
+async function loadUsers() {
+    try {
+        const r = await fetch('/api/users');
+        const data = await r.json();
+        allUsers = data.results || [];
+        renderTable();
+    } catch (e) {
+        document.getElementById('usersTable').innerHTML = '<tr><td colspan="8" class="empty">خطأ</td></tr>';
+    }
+}
+
+const roleLabels = { admin: 'مدير', staff: 'موظف', volunteer: 'متطوع' };
+
+function formatLastLogin(iso) {
+    if (!iso) return '<span style="color:#9CA3AF">لم يدخل بعد</span>';
+    const d = new Date(iso);
+    const date = d.toLocaleDateString('ar-EG', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const time = d.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit', hour12:true });
+    const diff = Date.now() - d.getTime();
+    const mins = Math.floor(diff / 60000);
+    let relative = '';
+    if (mins < 1) relative = ' (الآن)';
+    else if (mins < 60) relative = ` (منذ ${mins} د)`;
+    else if (mins < 1440) relative = ` (منذ ${Math.floor(mins/60)} س)`;
+    else if (mins < 10080) relative = ` (منذ ${Math.floor(mins/1440)} يوم)`;
+    return `<div>${date}<br><strong>${time}</strong><span style="color:#9CA3AF;font-size:0.8rem">${relative}</span></div>`;
+}
+
+function renderTable() {
+    const tbody = document.getElementById('usersTable');
+    if (allUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty">لا يوجد مستخدمون</td></tr>';
+        return;
+    }
+    tbody.innerHTML = allUsers.map(u => `
+        <tr>
+            <td>${u.id}</td>
+            <td><strong>${escapeHtml(u.username)}</strong></td>
+            <td>${escapeHtml(u.full_name || '-')}</td>
+            <td><span class="badge badge-${u.role}">${roleLabels[u.role] || u.role}</span></td>
+            <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'نشط' : 'موقوف'}</span></td>
+            <td>${u.graves_added || 0}</td>
+            <td style="font-size:0.85rem;white-space:nowrap">${formatLastLogin(u.last_login_at)}</td>
+            <td style="white-space:nowrap">
+                <a href="/admin/audit.html?user_id=${u.id}" class="action-btn" style="background:#7C3AED;color:white;text-decoration:none">📋 سجل النشاط</a>
+                <button class="action-btn action-btn-edit" onclick="editUser(${u.id})">✏️</button>
+                <button class="action-btn action-btn-delete" onclick="deleteUser(${u.id}, '${escapeHtml(u.username)}')">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = '➕ إضافة مستخدم';
+    document.getElementById('userId').value = '';
+    document.getElementById('username').value = '';
+    document.getElementById('full_name').value = '';
+    document.getElementById('role').value = 'staff';
+    document.getElementById('password').value = '';
+    document.getElementById('password').placeholder = 'كلمة مرور للحساب الجديد';
+    document.getElementById('activeGroup').style.display = 'none';
+    document.getElementById('username').disabled = false;
+    document.getElementById('userModal').classList.add('show');
+}
+
+function editUser(id) {
+    const u = allUsers.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('modalTitle').textContent = '✏️ تعديل مستخدم';
+    document.getElementById('userId').value = u.id;
+    document.getElementById('username').value = u.username;
+    document.getElementById('username').disabled = true;
+    document.getElementById('full_name').value = u.full_name || '';
+    document.getElementById('role').value = u.role;
+    document.getElementById('password').value = '';
+    document.getElementById('password').placeholder = 'اتركها فارغة لعدم التغيير';
+    document.getElementById('is_active').checked = !!u.is_active;
+    document.getElementById('activeGroup').style.display = 'block';
+    document.getElementById('userModal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('userModal').classList.remove('show');
+}
+
+async function saveUser() {
+    const id = document.getElementById('userId').value;
+    const body = {
+        full_name: document.getElementById('full_name').value.trim() || null,
+        role: document.getElementById('role').value
+    };
+    const password = document.getElementById('password').value;
+    if (!id) {
+        body.username = document.getElementById('username').value.trim();
+        body.password = password;
+        if (!body.username || !password) { showToast('الحقول المطلوبة ناقصة', true); return; }
+    } else {
+        if (password) body.password = password;
+        body.is_active = document.getElementById('is_active').checked;
+    }
+
+    try {
+        const url = id ? `/api/users/${id}` : '/api/users';
+        const method = id ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await r.json();
+        if (data.ok || data.id) {
+            showToast(id ? '✅ تم التعديل' : '✅ تم إنشاء الحساب');
+            closeModal();
+            loadUsers();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) {
+        showToast('❌ خطأ', true);
+    }
+}
+
+async function deleteUser(id, username) {
+    if (!confirmDelete(`حذف المستخدم "${username}"؟`)) return;
+    try {
+        const r = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+        const data = await r.json();
+        if (data.ok) {
+            showToast('✅ تم الحذف');
+            loadUsers();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) { showToast('❌ خطأ', true); }
+}
+
+loadUsers();
+</script>
+</body>
+</html>

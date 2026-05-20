@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E4D3F">
+<title>إضافة قبر - مقبرة صفوى</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#0E4D3F;--primary-dark:#08362C;--gold:#B8860B;--gold-light:#D4A93A;--cream:#FAF6EE;--cream-dark:#F0E9D8;--text-dark:#1F2937;--text-medium:#4B5563;--text-light:#9CA3AF;--white:#FFFFFF;--red:#DC2626;--green:#10B981;--orange:#F59E0B;--blue:#3B82F6}
+body{font-family:'Tajawal',sans-serif;background:#F3F4F6;color:var(--text-dark);min-height:100vh;line-height:1.6}
+.staff-header{background:linear-gradient(180deg,var(--primary) 0%,var(--primary-dark) 100%);color:var(--white);padding:14px 16px;position:sticky;top:0;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;align-items:center;gap:12px}
+.back-btn{background:rgba(255,255,255,0.1);border:none;color:white;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:0.95rem}
+.staff-title{font-family:'Reem Kufi',sans-serif;font-size:1.1rem;font-weight:700;flex:1}
+.container{max-width:600px;margin:0 auto;padding:16px}
+
+.section{background:var(--white);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.section-title{font-family:'Reem Kufi';color:var(--primary);font-size:1rem;margin-bottom:12px;font-weight:700;display:flex;align-items:center;gap:8px}
+
+/* Photo section */
+.photo-area{position:relative;background:var(--cream);border:2px dashed var(--cream-dark);border-radius:10px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
+.photo-area.has-photo{border-style:solid;background:#000;cursor:default}
+.photo-area video,.photo-area img{max-width:100%;max-height:400px;display:block}
+.photo-placeholder{font-size:3rem;color:var(--text-light);margin-bottom:10px}
+.photo-placeholder-text{color:var(--text-medium);font-weight:500}
+.photo-controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.photo-controls button{flex:1;min-width:120px;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--white);font-family:'Tajawal',sans-serif;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.9rem}
+.photo-controls button.primary{background:var(--primary);color:white;border-color:var(--primary)}
+.photo-controls button:hover{transform:translateY(-1px)}
+
+/* GPS */
+.gps-status{padding:14px;background:var(--cream);border-radius:10px;display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.gps-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--cream-dark);transition:all 0.3s}
+.gps-icon.locating{background:var(--orange);color:white;animation:pulse 1.5s infinite}
+.gps-icon.good{background:var(--green);color:white}
+.gps-icon.bad{background:var(--red);color:white}
+.gps-icon.poor{background:var(--orange);color:white}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.gps-info{flex:1;min-width:0}
+.gps-status-text{font-weight:700;color:var(--text-dark)}
+.gps-coords{font-family:monospace;font-size:0.85rem;color:var(--text-medium);margin-top:2px}
+.gps-accuracy{font-size:0.8rem;color:var(--text-medium)}
+.gps-actions{display:flex;gap:8px;flex-wrap:wrap}
+.gps-actions button{flex:1;min-width:140px;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--white);font-family:'Tajawal',sans-serif;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.9rem;text-decoration:none;color:var(--text-dark)}
+.gps-actions button.primary,.gps-actions a.primary{background:var(--primary);color:white;border-color:var(--primary)}
+.gps-actions button:hover{transform:translateY(-1px)}
+
+/* Form */
+.form-group{margin-bottom:12px}
+.form-label{display:block;color:var(--text-medium);font-size:0.85rem;margin-bottom:4px;font-weight:500}
+.form-label.required::after{content:' *';color:var(--red)}
+.form-input,.form-select,.form-textarea{width:100%;padding:11px 12px;border:1.5px solid var(--cream-dark);border-radius:8px;font-family:'Tajawal',sans-serif;font-size:0.95rem;color:var(--text-dark);background:var(--white)}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,0.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* AI extract button */
+.ai-extract-btn{width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:white;border:none;padding:12px;border-radius:10px;font-family:'Tajawal',sans-serif;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px}
+.ai-extract-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+/* Save button */
+.save-section{position:sticky;bottom:0;background:var(--white);padding:14px 16px;margin:14px -16px 0;box-shadow:0 -4px 12px rgba(0,0,0,0.08);display:flex;gap:10px}
+.btn-save{flex:1;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;padding:14px;border-radius:10px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:1rem;cursor:pointer}
+.btn-save:disabled{opacity:0.5}
+.btn-cancel{padding:14px 22px;border-radius:10px;background:var(--cream);color:var(--text-dark);border:none;font-family:'Tajawal',sans-serif;cursor:pointer}
+
+/* Duplicate warning */
+.duplicate-warning{background:#FEF3C7;color:#92400E;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:10px;display:none}
+.duplicate-warning.show{display:block}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--primary);color:white;padding:12px 24px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);z-index:1500;opacity:0;transition:opacity 0.3s;max-width:90%}
+.toast.show{opacity:1}
+.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+
+<header class="staff-header">
+    <button class="back-btn" onclick="window.location.href='/staff/'">← رجوع</button>
+    <div class="staff-title">➕ إضافة قبر جديد</div>
+</header>
+
+<div class="container">
+
+    <!-- Photo Section -->
+    <div class="section">
+        <div class="section-title">📸 صورة شاهد القبر</div>
+        <div class="photo-area" id="photoArea">
+            <video id="cameraView" style="display:none" autoplay playsinline muted></video>
+            <canvas id="photoCanvas" style="display:none"></canvas>
+            <img id="photoPreview" style="display:none">
+            <div id="photoPlaceholder">
+                <div class="photo-placeholder">📷</div>
+                <div class="photo-placeholder-text">اختر طريقة إضافة الصورة:</div>
+            </div>
+        </div>
+        <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display:none" onchange="handleFileSelect(event)">
+        <input type="file" accept="image/*" id="galleryInput" style="display:none" onchange="handleFileSelect(event)">
+        <div class="photo-controls" id="initialControls">
+            <button onclick="openCameraSmart()" class="primary">📷 التقط بالكاميرا</button>
+            <button onclick="document.getElementById('galleryInput').click()">🖼️ من المعرض</button>
+        </div>
+        <div class="photo-controls" id="streamControls" style="display:none">
+            <button id="captureBtn" onclick="capturePhoto()" class="primary">📸 التقط الصورة</button>
+            <button onclick="cancelStream()">✕ إلغاء</button>
+        </div>
+        <div class="photo-controls" id="afterControls" style="display:none">
+            <button id="retakeBtn" onclick="retakePhoto()">🔄 إعادة التصوير</button>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-medium);margin-top:8px;text-align:center">
+            💡 على الجوال: كاميرا الجوال • على الكمبيوتر: Webcam
+        </p>
+        <button class="ai-extract-btn" id="aiExtractBtn" onclick="extractWithAI()" style="display:none" disabled>
+            <span>🤖</span>
+            <span id="aiBtnText">قراءة الشاهد بالذكاء الاصطناعي</span>
+        </button>
+        <div id="aiStatus" style="text-align:center;color:var(--text-medium);font-size:0.85rem;margin-top:8px;display:none"></div>
+    </div>
+
+    <!-- GPS Section -->
+    <div class="section">
+        <div class="section-title">📍 الموقع الجغرافي</div>
+        <div class="gps-status">
+            <div class="gps-icon" id="gpsIcon">📍</div>
+            <div class="gps-info">
+                <div class="gps-status-text" id="gpsStatusText">اضغط "تحديد الموقع"</div>
+                <div class="gps-coords" id="gpsCoords"></div>
+                <div class="gps-accuracy" id="gpsAccuracy"></div>
+            </div>
+        </div>
+        <div class="gps-actions">
+            <button class="primary" onclick="captureGPS()" id="gpsBtn">📍 تحديد الموقع</button>
+            <a href="#" id="mapVerifyBtn" target="_blank" style="display:none">🗺️ تحقق في Google Maps</a>
+        </div>
+    </div>
+
+    <!-- Data Form -->
+    <div class="section">
+        <div class="section-title">📝 بيانات المتوفى</div>
+
+        <div class="form-group">
+            <label class="form-label required">الاسم الكامل</label>
+            <input type="text" class="form-input" id="name" placeholder="الاسم الكامل" required>
+        </div>
+
+        <div class="form-row-2">
+            <div class="form-group">
+                <label class="form-label">الجنس</label>
+                <select class="form-select" id="gender">
+                    <option value="">-- اختر --</option>
+                    <option value="ذكر">ذكر</option>
+                    <option value="انثى">أنثى</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">العمر</label>
+                <input type="number" class="form-input" id="age" min="0" max="150">
+            </div>
+        </div>
+
+        <div class="form-row-2">
+            <div class="form-group">
+                <label class="form-label">يوم الوفاة</label>
+                <select class="form-select" id="death_day">
+                    <option value="">-- اختر --</option>
+                    <option>السبت</option><option>الاحد</option><option>الاثنين</option>
+                    <option>الثلاثاء</option><option>الاربعاء</option><option>الخميس</option><option>الجمعة</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">التاريخ الميلادي</label>
+                <input type="text" class="form-input" id="death_date_gregorian" placeholder="4/1/2023">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">التاريخ الهجري</label>
+            <input type="text" class="form-input" id="death_date_hijri" placeholder="11/6/1444">
+        </div>
+    </div>
+
+    <!-- Location -->
+    <div class="section">
+        <div class="section-title">🏷️ موقع القبر</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label required">المنطقة</label>
+                <input type="text" class="form-input" id="section" value="أ">
+            </div>
+            <div class="form-group">
+                <label class="form-label">الصف</label>
+                <input type="number" class="form-input" id="row_number" min="1" max="11">
+            </div>
+            <div class="form-group">
+                <label class="form-label">رقم القبر</label>
+                <input type="number" class="form-input" id="grave_number" min="1" max="17">
+            </div>
+        </div>
+        <div class="duplicate-warning" id="duplicateWarning">
+            ⚠️ <strong>تنبيه:</strong> <span id="duplicateText"></span>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="section">
+        <div class="section-title">📓 ملاحظات (اختياري)</div>
+        <div class="form-group">
+            <textarea class="form-textarea" id="notes" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+        </div>
+    </div>
+
+    <div class="save-section">
+        <button class="btn-cancel" onclick="window.location.href='/staff/'">إلغاء</button>
+        <button class="btn-save" id="saveBtn" onclick="saveGrave()">💾 حفظ القبر</button>
+    </div>
+</div>
+
+<script>
+let stream = null;
+let photoBlob = null;
+let photoDataUrl = null;
+let gpsReadings = [];
+let bestGPS = null;
+let allGraves = [];
+
+// ==========================================
+// Camera handling (3 approaches for reliability)
+// ==========================================
+
+function setPhotoUI(state) {
+    // state: 'initial' | 'stream' | 'after'
+    document.getElementById('initialControls').style.display = state === 'initial' ? 'flex' : 'none';
+    document.getElementById('streamControls').style.display = state === 'stream' ? 'flex' : 'none';
+    document.getElementById('afterControls').style.display = state === 'after' ? 'flex' : 'none';
+}
+
+function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod|Mobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+async function openCameraSmart() {
+    // On mobile: use native camera via file input (most reliable)
+    if (isMobileDevice()) {
+        document.getElementById('cameraInput').click();
+        return;
+    }
+    // On desktop: try webcam streaming
+    const video = document.getElementById('cameraView');
+    const placeholder = document.getElementById('photoPlaceholder');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById('galleryInput').click();
+        return;
+    }
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+            audio: false
+        });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        placeholder.style.display = 'none';
+        setPhotoUI('stream');
+    } catch (e) {
+        alert('❌ لم يتم السماح بالكاميرا. تأكد من إعطاء الإذن من المتصفح، أو استخدم "من المعرض"');
+    }
+}
+
+function cancelStream() {
+    stopCamera();
+    document.getElementById('cameraView').style.display = 'none';
+    document.getElementById('photoPlaceholder').style.display = 'flex';
+    setPhotoUI('initial');
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        // Load into image to resize/compress
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.getElementById('photoCanvas');
+            // Resize if too large (max 1920px width)
+            const maxW = 1920;
+            const scale = img.width > maxW ? maxW / img.width : 1;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+                photoBlob = blob;
+                const r = new FileReader();
+                r.onload = () => {
+                    photoDataUrl = r.result;
+                    showCapturedPhoto();
+                };
+                r.readAsDataURL(blob);
+            }, 'image/jpeg', 0.85);
+        };
+        img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+    // Clear input so same file can be selected again
+    event.target.value = '';
+}
+
+function capturePhoto() {
+    const video = document.getElementById('cameraView');
+    const canvas = document.getElementById('photoCanvas');
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    canvas.toBlob((blob) => {
+        photoBlob = blob;
+        const reader = new FileReader();
+        reader.onload = () => {
+            photoDataUrl = reader.result;
+            stopCamera();
+            showCapturedPhoto();
+        };
+        reader.readAsDataURL(blob);
+    }, 'image/jpeg', 0.85);
+}
+
+function showCapturedPhoto() {
+    const img = document.getElementById('photoPreview');
+    const video = document.getElementById('cameraView');
+    const area = document.getElementById('photoArea');
+    const placeholder = document.getElementById('photoPlaceholder');
+
+    img.src = photoDataUrl;
+    img.style.display = 'block';
+    video.style.display = 'none';
+    placeholder.style.display = 'none';
+    area.classList.add('has-photo');
+    setPhotoUI('after');
+
+    const aiBtn = document.getElementById('aiExtractBtn');
+    aiBtn.style.display = 'flex';
+    checkAIAvailable();
+}
+
+function retakePhoto() {
+    document.getElementById('photoPreview').style.display = 'none';
+    document.getElementById('photoArea').classList.remove('has-photo');
+    document.getElementById('photoPlaceholder').style.display = 'flex';
+    document.getElementById('aiExtractBtn').style.display = 'none';
+    document.getElementById('cameraNote').style.display = 'none';
+    photoBlob = null;
+    photoDataUrl = null;
+    setPhotoUI('initial');
+}
+
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+    }
+}
+
+async function checkAIAvailable() {
+    try {
+        // Test if AI extraction endpoint is configured
+        // For now, just enable the button - the endpoint will return an error if not configured
+        document.getElementById('aiExtractBtn').disabled = false;
+    } catch (e) {
+        document.getElementById('aiExtractBtn').disabled = true;
+        document.getElementById('aiBtnText').textContent = 'AI غير مفعّل (يحتاج إعداد)';
+    }
+}
+
+async function extractWithAI() {
+    if (!photoDataUrl) return;
+    const btn = document.getElementById('aiExtractBtn');
+    const status = document.getElementById('aiStatus');
+    btn.disabled = true;
+    document.getElementById('aiBtnText').textContent = 'جاري القراءة...';
+    status.style.display = 'block';
+    status.textContent = '⏳ الذكاء الاصطناعي يقرأ الشاهد...';
+
+    try {
+        const r = await fetch('/api/ai/extract-tombstone', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: photoDataUrl })
+        });
+        const data = await r.json();
+        if (data.error) {
+            status.textContent = '⚠️ ' + data.error;
+            status.style.color = 'var(--orange)';
+        } else if (data.extracted) {
+            if (data.extracted.name) document.getElementById('name').value = data.extracted.name;
+            if (data.extracted.gender) document.getElementById('gender').value = data.extracted.gender;
+            if (data.extracted.age) document.getElementById('age').value = data.extracted.age;
+            if (data.extracted.death_day) document.getElementById('death_day').value = data.extracted.death_day;
+            if (data.extracted.death_date_gregorian) document.getElementById('death_date_gregorian').value = data.extracted.death_date_gregorian;
+            if (data.extracted.death_date_hijri) document.getElementById('death_date_hijri').value = data.extracted.death_date_hijri;
+            status.textContent = '✅ تم استخراج البيانات - راجعها وعدّل إذا لزم';
+            status.style.color = 'var(--green)';
+        }
+    } catch (e) {
+        status.textContent = '❌ خطأ في الاتصال';
+        status.style.color = 'var(--red)';
+    } finally {
+        btn.disabled = false;
+        document.getElementById('aiBtnText').textContent = 'قراءة الشاهد بالذكاء الاصطناعي';
+    }
+}
+
+// ==========================================
+// GPS handling (5 readings, accuracy filter)
+// ==========================================
+async function captureGPS() {
+    if (!navigator.geolocation) {
+        showToast('❌ الجهاز لا يدعم تحديد الموقع', true);
+        return;
+    }
+    const icon = document.getElementById('gpsIcon');
+    const statusText = document.getElementById('gpsStatusText');
+    const coordsEl = document.getElementById('gpsCoords');
+    const accuracyEl = document.getElementById('gpsAccuracy');
+    const btn = document.getElementById('gpsBtn');
+
+    icon.className = 'gps-icon locating';
+    statusText.textContent = 'جاري تحديد الموقع... (0/5)';
+    coordsEl.textContent = '';
+    accuracyEl.textContent = '';
+    btn.disabled = true;
+    gpsReadings = [];
+    bestGPS = null;
+
+    const tryGet = () => new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true, timeout: 8000, maximumAge: 0
+        });
+    });
+
+    for (let i = 0; i < 5; i++) {
+        try {
+            const pos = await tryGet();
+            gpsReadings.push({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                accuracy: pos.coords.accuracy
+            });
+            statusText.textContent = `جاري تحديد الموقع... (${i+1}/5)`;
+            // Update preview with best so far
+            const best = gpsReadings.reduce((a, b) => a.accuracy < b.accuracy ? a : b);
+            coordsEl.textContent = `${best.lat.toFixed(6)}, ${best.lng.toFixed(6)}`;
+            accuracyEl.textContent = `دقة: ${Math.round(best.accuracy)} م`;
+        } catch (e) {
+            // ignore individual failures
+        }
+        await new Promise(r => setTimeout(r, 600));
+    }
+
+    if (gpsReadings.length === 0) {
+        icon.className = 'gps-icon bad';
+        statusText.textContent = '❌ فشل تحديد الموقع';
+        btn.disabled = false;
+        return;
+    }
+
+    // Use median lat/lng of best readings (sorted by accuracy)
+    const sorted = gpsReadings.slice().sort((a, b) => a.accuracy - b.accuracy);
+    const top = sorted.slice(0, Math.min(3, sorted.length));
+    const avgLat = top.reduce((s, r) => s + r.lat, 0) / top.length;
+    const avgLng = top.reduce((s, r) => s + r.lng, 0) / top.length;
+    const avgAccuracy = top.reduce((s, r) => s + r.accuracy, 0) / top.length;
+
+    bestGPS = { lat: avgLat, lng: avgLng, accuracy: avgAccuracy };
+
+    if (avgAccuracy <= 10) {
+        icon.className = 'gps-icon good';
+        statusText.textContent = '✅ موقع دقيق';
+    } else if (avgAccuracy <= 25) {
+        icon.className = 'gps-icon poor';
+        statusText.textContent = '⚠️ دقة متوسطة - تحقق من الموقع';
+    } else {
+        icon.className = 'gps-icon bad';
+        statusText.textContent = '⚠️ دقة ضعيفة - حدّد مرة ثانية';
+    }
+    coordsEl.textContent = `${avgLat.toFixed(6)}, ${avgLng.toFixed(6)}`;
+    accuracyEl.textContent = `دقة: ${Math.round(avgAccuracy)} م (من ${gpsReadings.length} قراءات)`;
+
+    const mapBtn = document.getElementById('mapVerifyBtn');
+    mapBtn.href = `https://www.google.com/maps?q=${avgLat},${avgLng}&z=20`;
+    mapBtn.style.display = 'inline-flex';
+
+    btn.disabled = false;
+    btn.textContent = '↻ إعادة التحديد';
+
+    // Try to auto-fill section/row/grave from GPS (Section A only)
+    autoFillFromGPS(avgLat, avgLng);
+}
+
+// Section A corners for reverse calculation
+const SECTION_A_CORNERS = {
+    nw: { lat: 26.649576, lng: 49.958884 },
+    ne: { lat: 26.649639, lng: 49.959215 },
+    sw: { lat: 26.649334, lng: 49.958942 },
+    se: { lat: 26.649388, lng: 49.959267 }
+};
+
+function autoFillFromGPS(lat, lng) {
+    // Determine if within Section A bounds (approximate)
+    const c = SECTION_A_CORNERS;
+    const minLat = Math.min(c.sw.lat, c.se.lat) - 0.00005;
+    const maxLat = Math.max(c.nw.lat, c.ne.lat) + 0.00005;
+    const minLng = Math.min(c.nw.lng, c.sw.lng) - 0.00005;
+    const maxLng = Math.max(c.ne.lng, c.se.lng) + 0.00005;
+    if (lat < minLat || lat > maxLat || lng < minLng || lng > maxLng) return;
+
+    // Approximate inverse bilinear (simple bounding-box approach)
+    const v = 1 - (lat - c.sw.lat) / ((c.nw.lat + c.ne.lat) / 2 - (c.sw.lat + c.se.lat) / 2 + 0.000001);
+    const u = (lng - (c.nw.lng + c.sw.lng) / 2) / ((c.ne.lng + c.se.lng) / 2 - (c.nw.lng + c.sw.lng) / 2 + 0.000001);
+    const row = Math.max(1, Math.min(11, Math.round(v * 10 + 1)));
+    const grave = Math.max(1, Math.min(17, Math.round(u * 16 + 1)));
+
+    document.getElementById('section').value = 'أ';
+    if (!document.getElementById('row_number').value) document.getElementById('row_number').value = row;
+    if (!document.getElementById('grave_number').value) document.getElementById('grave_number').value = grave;
+    checkDuplicate();
+}
+
+// ==========================================
+// Duplicate detection
+// ==========================================
+async function loadGravesForCheck() {
+    try {
+        const r = await fetch('/api/graves');
+        const data = await r.json();
+        allGraves = data.results || [];
+    } catch (e) {}
+}
+
+function checkDuplicate() {
+    const section = document.getElementById('section').value.trim();
+    const row = document.getElementById('row_number').value;
+    const num = document.getElementById('grave_number').value;
+    const warn = document.getElementById('duplicateWarning');
+    const text = document.getElementById('duplicateText');
+    if (!section || !row || !num) {
+        warn.classList.remove('show');
+        return;
+    }
+    const existing = allGraves.find(g => g.section === section && String(g.row_number) === String(row) && String(g.grave_number) === String(num));
+    if (existing) {
+        text.textContent = `هذا الموقع (${section}-${row}-${num}) مسجّل بالفعل باسم: ${existing.name}. تأكد أنه ليس تكراراً.`;
+        warn.classList.add('show');
+    } else {
+        warn.classList.remove('show');
+    }
+}
+
+['section', 'row_number', 'grave_number'].forEach(id => {
+    document.getElementById(id).addEventListener('input', checkDuplicate);
+});
+
+// ==========================================
+// Save
+// ==========================================
+async function saveGrave() {
+    const name = document.getElementById('name').value.trim();
+    if (!name) {
+        showToast('❌ الاسم مطلوب', true);
+        document.getElementById('name').focus();
+        return;
+    }
+    const section = document.getElementById('section').value.trim() || 'أ';
+
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = '⏳ جاري الحفظ...';
+
+    let photoUrl = null;
+    // Photo upload to R2 would go here when R2 is enabled
+    // For now, we store photoDataUrl as a placeholder
+
+    const body = {
+        name,
+        gender: document.getElementById('gender').value || null,
+        age: document.getElementById('age').value ? parseInt(document.getElementById('age').value) : null,
+        death_day: document.getElementById('death_day').value || null,
+        death_date_gregorian: document.getElementById('death_date_gregorian').value.trim() || null,
+        death_date_hijri: document.getElementById('death_date_hijri').value.trim() || null,
+        section,
+        row_number: document.getElementById('row_number').value ? parseInt(document.getElementById('row_number').value) : null,
+        grave_number: document.getElementById('grave_number').value ? parseInt(document.getElementById('grave_number').value) : null,
+        latitude: bestGPS ? bestGPS.lat : null,
+        longitude: bestGPS ? bestGPS.lng : null,
+        notes: document.getElementById('notes').value.trim() || null,
+        photo_url: photoUrl
+    };
+
+    try {
+        const r = await fetch('/api/graves', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await r.json();
+        if (data.ok || data.id) {
+            showToast('✅ تم حفظ القبر');
+            setTimeout(() => window.location.href = '/staff/', 1000);
+        } else {
+            showToast('❌ ' + (data.error || 'فشل الحفظ'), true);
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 حفظ القبر';
+        }
+    } catch (e) {
+        showToast('❌ خطأ في الاتصال', true);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 حفظ القبر';
+    }
+}
+
+function showToast(msg, isError = false) {
+    let t = document.getElementById('toastEl');
+    if (!t) { t = document.createElement('div'); t.id='toastEl'; t.className='toast'; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.toggle('error', isError);
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Check auth on load
+(async () => {
+    try {
+        const r = await fetch('/api/auth/me');
+        if (r.status === 401) { window.location.href = '/login.html'; return; }
+        const d = await r.json();
+        if (!d.authenticated) window.location.href = '/login.html';
+    } catch (e) { window.location.href = '/login.html'; }
+})();
+
+loadGravesForCheck();
+window.addEventListener('beforeunload', stopCamera);
+</script>
+</body>
+</html>

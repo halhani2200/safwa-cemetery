@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>إعلانات الوفاة - مقبرة صفوى</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+<style>
+.announcement-card{background:white;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border-right:4px solid var(--gold)}
+.announcement-card.inactive{opacity:0.55;border-right-color:#9CA3AF}
+.announcement-card.expired{border-right-color:#DC2626}
+.ann-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.ann-name{font-family:'Reem Kufi';font-size:1.15rem;color:var(--text-dark);font-weight:700}
+.ann-meta{font-size:0.85rem;color:var(--text-medium);margin-top:2px}
+.ann-detail{font-size:0.9rem;color:var(--text-medium);margin:4px 0}
+.ann-detail strong{color:var(--text-dark)}
+.ann-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.ann-badge-notif{background:#10B981;color:white;padding:2px 8px;border-radius:10px;font-size:0.75rem}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🕌</div>
+            <div><div class="sidebar-title">مقبرة صفوى</div><div class="sidebar-subtitle" id="userBadge">...</div></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/" class="nav-link"><span>📊</span><span>الرئيسية</span></a>
+            <a href="/admin/graves.html" class="nav-link"><span>🪦</span><span>إدارة القبور</span></a>
+            <a href="/staff/add.html" class="nav-link"><span>➕</span><span>إضافة قبر</span></a>
+            <a href="/map.html" class="nav-link" target="_blank"><span>🗺️</span><span>خريطة المقبرة</span></a>
+            <a href="/admin/announcements.html" class="nav-link active"><span>⚰️</span><span>إعلانات الوفاة</span></a>
+            <a href="/admin/users.html" class="nav-link"><span>👥</span><span>المستخدمون</span></a>
+            <a href="/admin/audit.html" class="nav-link"><span>📋</span><span>سجل النشاط</span></a>
+            <a href="/admin/reports.html" class="nav-link"><span>📝</span><span>بلاغات الأخطاء</span></a>
+            <a href="/admin/settings.html" class="nav-link"><span>⚙️</span><span>الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/" class="nav-link"><span>🌐</span><span>عرض الموقع</span></a>
+            <button onclick="logout()" class="nav-link logout-btn"><span>🚪</span><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>⚰️ إعلانات الوفاة</h1>
+            <p id="statsLabel">جاري التحميل...</p>
+        </div>
+
+        <div class="card">
+            <h2>📢 إشعار سريع (لكل المشتركين)</h2>
+            <p style="color:var(--text-medium);font-size:0.9rem;margin-bottom:14px">
+                لإرسال إشعار فوري لأي شي مهم (صيانة، مفقودات، إعلانات عامة) — لا يُسجّل في الموقع، فقط يطلع على شاشات المشتركين كإشعار.
+            </p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">النوع</label>
+                    <select class="form-select" id="bcast_type" onchange="updateBcastIcon()">
+                        <option value="general">📢 إعلان عام</option>
+                        <option value="maintenance">🔧 صيانة</option>
+                        <option value="lost">🔍 مفقودات</option>
+                        <option value="event">📅 مناسبة / حدث</option>
+                        <option value="urgent">🚨 طارئ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">رابط عند الضغط (اختياري)</label>
+                    <input type="text" class="form-input" id="bcast_url" placeholder="/" value="/">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">العنوان *</label>
+                    <input type="text" class="form-input" id="bcast_title" placeholder="مثال: صيانة مقبرة صفوى يوم الجمعة">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">نص الإشعار *</label>
+                    <textarea class="form-textarea" id="bcast_body" rows="3" placeholder="المقبرة ستكون مغلقة يوم الجمعة من 9 ص لـ 12 ظهراً لأعمال صيانة"></textarea>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="sendBroadcast()">📤 إرسال الإشعار للمشتركين</button>
+            <span id="bcast_status" style="margin-right:14px;color:var(--text-medium);font-size:0.9rem"></span>
+        </div>
+
+        <div class="card">
+            <h2>⚰️ إعلانات الوفاة</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+                <span style="font-size:0.9rem;color:var(--text-medium)" id="countLabel">جاري التحميل...</span>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ إضافة إعلان وفاة</button>
+            </div>
+            <div id="announcementsList">
+                <div class="loading">جاري التحميل...</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="annModal">
+    <div class="modal" style="max-width:700px">
+        <div class="modal-header">
+            <h3 id="annModalTitle">➕ إضافة إعلان</h3>
+            <button class="modal-close" onclick="closeAnnModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="ann_id">
+            <div class="form-grid">
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">اسم المتوفى *</label>
+                    <input type="text" class="form-input" id="ann_deceased_name" placeholder="مثلاً: الحاج محمد علي" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الكنية (اختياري)</label>
+                    <input type="text" class="form-input" id="ann_kunya" placeholder="أبو خالد">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">العائلة (اختياري)</label>
+                    <input type="text" class="form-input" id="ann_family" placeholder="آل صفوان">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">رسالة إضافية (اختياري)</label>
+                    <textarea class="form-textarea" id="ann_message" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">معلومات الجنازة</label>
+                    <input type="text" class="form-input" id="ann_funeral_info" placeholder="الصلاة بعد العصر - مسجد كذا">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">معلومات الدفن</label>
+                    <input type="text" class="form-input" id="ann_burial_info" placeholder="مقبرة صفوى الجديدة">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">عزاء الرجال</label>
+                    <input type="text" class="form-input" id="ann_condolence_men" placeholder="حسينية كذا">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">عزاء النساء</label>
+                    <input type="text" class="form-input" id="ann_condolence_women" placeholder="منزل المتوفى">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ينتهي تلقائياً في (اختياري)</label>
+                    <input type="datetime-local" class="form-input" id="ann_expires_at">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="display:flex;align-items:center;gap:6px;margin-top:24px">
+                        <input type="checkbox" id="ann_is_active" checked> عرض الإعلان (نشط)
+                    </label>
+                </div>
+            </div>
+            <hr style="margin:18px 0;border:none;border-top:1px solid var(--cream-dark)">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;background:#FEF3C7;padding:10px;border-radius:6px;cursor:pointer">
+                <input type="checkbox" id="ann_send_notification">
+                <span>📢 <strong>إرسال إشعار للمشتركين</strong> (Web Push للزوار اللي فعّلوا الإشعارات)</span>
+            </label>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeAnnModal()">إلغاء</button>
+            <button type="button" class="btn btn-primary" onclick="saveAnnouncement()">💾 حفظ</button>
+        </div>
+    </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+let allAnnouncements = [];
+
+async function loadAnnouncements() {
+    try {
+        const r = await fetch('/api/announcements');
+        const data = await r.json();
+        allAnnouncements = data.results || [];
+        const active = allAnnouncements.filter(a => a.is_active).length;
+        document.getElementById('statsLabel').textContent = `${active} إعلان نشط من إجمالي ${allAnnouncements.length}`;
+        document.getElementById('countLabel').textContent = `${allAnnouncements.length} إعلان`;
+        renderList();
+    } catch (e) {
+        document.getElementById('announcementsList').innerHTML = '<div class="empty">❌ خطأ في التحميل</div>';
+    }
+}
+
+function renderList() {
+    const container = document.getElementById('announcementsList');
+    if (allAnnouncements.length === 0) {
+        container.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>لا توجد إعلانات</div>';
+        return;
+    }
+    const now = new Date().toISOString();
+    container.innerHTML = allAnnouncements.map(a => {
+        const expired = a.expires_at && a.expires_at < now;
+        const inactive = !a.is_active;
+        let cls = 'announcement-card';
+        if (inactive) cls += ' inactive';
+        else if (expired) cls += ' expired';
+        return `
+        <div class="${cls}">
+            <div class="ann-header">
+                <div>
+                    <div class="ann-name">${escapeHtml(a.deceased_name)}${a.kunya ? ' <small style="color:var(--gold)">(' + escapeHtml(a.kunya) + ')</small>' : ''}</div>
+                    <div class="ann-meta">📅 ${new Date(a.created_at).toLocaleString('ar-EG')}${a.family ? ' · ' + escapeHtml(a.family) : ''}${a.notification_sent ? ' · <span class="ann-badge-notif">📢 تم الإشعار</span>' : ''}${inactive ? ' · <span style="color:#9CA3AF">⏸️ غير نشط</span>' : ''}${expired ? ' · <span style="color:#DC2626">⏰ منتهٍ</span>' : ''}</div>
+                </div>
+            </div>
+            ${a.message ? `<div class="ann-detail">${escapeHtml(a.message)}</div>` : ''}
+            ${a.funeral_info ? `<div class="ann-detail">🕌 <strong>الصلاة:</strong> ${escapeHtml(a.funeral_info)}</div>` : ''}
+            ${a.burial_info ? `<div class="ann-detail">📍 <strong>الدفن:</strong> ${escapeHtml(a.burial_info)}</div>` : ''}
+            ${a.condolence_men ? `<div class="ann-detail">👥 <strong>عزاء الرجال:</strong> ${escapeHtml(a.condolence_men)}</div>` : ''}
+            ${a.condolence_women ? `<div class="ann-detail">👥 <strong>عزاء النساء:</strong> ${escapeHtml(a.condolence_women)}</div>` : ''}
+            <div class="ann-actions">
+                <button class="action-btn action-btn-edit" onclick="editAnn(${a.id})">✏️ تعديل</button>
+                <button class="action-btn action-btn-delete" onclick="deleteAnn(${a.id}, '${escapeHtml(a.deceased_name).replace(/'/g, "&apos;")}')">🗑️ حذف</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function openAddModal() {
+    document.getElementById('annModalTitle').textContent = '➕ إضافة إعلان';
+    document.getElementById('ann_id').value = '';
+    ['ann_deceased_name','ann_kunya','ann_family','ann_message','ann_funeral_info','ann_burial_info','ann_condolence_men','ann_condolence_women','ann_expires_at'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ann_is_active').checked = true;
+    document.getElementById('ann_send_notification').checked = false;
+    document.getElementById('annModal').classList.add('show');
+}
+
+function editAnn(id) {
+    const a = allAnnouncements.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('annModalTitle').textContent = '✏️ تعديل إعلان';
+    document.getElementById('ann_id').value = a.id;
+    document.getElementById('ann_deceased_name').value = a.deceased_name || '';
+    document.getElementById('ann_kunya').value = a.kunya || '';
+    document.getElementById('ann_family').value = a.family || '';
+    document.getElementById('ann_message').value = a.message || '';
+    document.getElementById('ann_funeral_info').value = a.funeral_info || '';
+    document.getElementById('ann_burial_info').value = a.burial_info || '';
+    document.getElementById('ann_condolence_men').value = a.condolence_men || '';
+    document.getElementById('ann_condolence_women').value = a.condolence_women || '';
+    document.getElementById('ann_expires_at').value = a.expires_at ? a.expires_at.slice(0, 16) : '';
+    document.getElementById('ann_is_active').checked = !!a.is_active;
+    document.getElementById('ann_send_notification').checked = false;
+    document.getElementById('annModal').classList.add('show');
+}
+
+function closeAnnModal() {
+    document.getElementById('annModal').classList.remove('show');
+}
+
+async function saveAnnouncement() {
+    const name = document.getElementById('ann_deceased_name').value.trim();
+    if (!name) { showToast('اسم المتوفى مطلوب', true); return; }
+    const id = document.getElementById('ann_id').value;
+    const body = {
+        deceased_name: name,
+        kunya: document.getElementById('ann_kunya').value.trim() || null,
+        family: document.getElementById('ann_family').value.trim() || null,
+        message: document.getElementById('ann_message').value.trim() || null,
+        funeral_info: document.getElementById('ann_funeral_info').value.trim() || null,
+        burial_info: document.getElementById('ann_burial_info').value.trim() || null,
+        condolence_men: document.getElementById('ann_condolence_men').value.trim() || null,
+        condolence_women: document.getElementById('ann_condolence_women').value.trim() || null,
+        expires_at: document.getElementById('ann_expires_at').value || null,
+        is_active: document.getElementById('ann_is_active').checked,
+        send_notification: document.getElementById('ann_send_notification').checked
+    };
+
+    try {
+        const url = id ? `/api/announcement/${id}` : '/api/announcements';
+        const method = id ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await r.json();
+        if (data.ok || data.id) {
+            let msg = id ? '✅ تم التعديل' : '✅ تم الإضافة';
+            if (data.push) msg += ` — أُرسل لـ ${data.push.sent} مشترك`;
+            showToast(msg);
+            closeAnnModal();
+            loadAnnouncements();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) {
+        showToast('❌ خطأ', true);
+    }
+}
+
+async function deleteAnn(id, name) {
+    if (!confirmDelete(`حذف إعلان "${name}"؟`)) return;
+    try {
+        const r = await fetch(`/api/announcement/${id}`, { method: 'DELETE' });
+        const data = await r.json();
+        if (data.ok) {
+            showToast('✅ تم الحذف');
+            loadAnnouncements();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) {
+        showToast('❌ خطأ', true);
+    }
+}
+
+async function sendBroadcast() {
+    const title = document.getElementById('bcast_title').value.trim();
+    const bodyTxt = document.getElementById('bcast_body').value.trim();
+    const type = document.getElementById('bcast_type').value;
+    const url = document.getElementById('bcast_url').value.trim() || '/';
+    const status = document.getElementById('bcast_status');
+
+    if (!title || !bodyTxt) {
+        showToast('العنوان والنص مطلوبان', true);
+        return;
+    }
+    if (!confirm(`إرسال هذا الإشعار لكل المشتركين؟\n\nالعنوان: ${title}\nالنص: ${bodyTxt}`)) return;
+
+    status.textContent = '⏳ جاري الإرسال...';
+    try {
+        const r = await fetch('/api/push/broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, body: bodyTxt, url, type })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            status.textContent = `✅ أُرسل لـ ${data.sent} مشترك` + (data.removed ? ` (إزالة ${data.removed} اشتراك منتهي)` : '');
+            showToast(`✅ تم الإرسال لـ ${data.sent} مشترك`);
+            document.getElementById('bcast_title').value = '';
+            document.getElementById('bcast_body').value = '';
+        } else {
+            status.textContent = '❌ ' + (data.error || 'فشل');
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) {
+        status.textContent = '❌ خطأ في الاتصال';
+        showToast('❌ خطأ', true);
+    }
+}
+
+function updateBcastIcon() {}
+
+loadAnnouncements();
+</script>
+</body>
+</html>

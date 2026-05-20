@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /index.html
+
+Disallow: /login
+Disallow: /login.html
+Disallow: /admin/
+Disallow: /staff/
+Disallow: /api/
+
+Sitemap: https://safwa-cemetery.com/sitemap.xml

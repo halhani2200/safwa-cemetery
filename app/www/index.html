@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>مقبرة صفوى</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#0E4D3F;color:white;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
+.loading{padding:20px}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);border-top-color:#B8860B;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="loading">
+    <div class="spinner"></div>
+    <p>جاري التحميل...</p>
+</div>
+<script>
+// Fallback launcher — when running under Capacitor with server.url set,
+// the webview loads safwa-cemetery.com directly. This page only shows
+// if loaded standalone (e.g., during build verification).
+setTimeout(() => {
+    if (window.location.host !== 'safwa-cemetery.com') {
+        window.location.href = 'https://safwa-cemetery.com/?source=app';
+    }
+}, 100);
+</script>
+</body>
+</html>

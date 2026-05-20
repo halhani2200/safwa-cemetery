@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>إدارة القبور - مقبرة صفوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+.filter-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px;background:var(--cream);border-radius:8px;margin-bottom:12px}
+.filter-bar select,.filter-bar input{padding:6px 10px;border:1px solid var(--cream-dark);border-radius:6px;font-family:'Tajawal',sans-serif;font-size:0.9rem;background:white}
+.filter-bar label{font-size:0.85rem;color:var(--text-medium);font-weight:600;display:flex;align-items:center;gap:6px}
+.btn-export{background:#0E7C3A;color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:600;font-size:0.9rem;display:inline-flex;align-items:center;gap:6px}
+.btn-export:hover{background:#0a5f2c}
+.sortable{cursor:pointer;user-select:none}
+.sortable:hover{background:rgba(184,134,11,0.1)}
+.sortable .sort-icon{display:inline-block;margin-right:4px;color:var(--gold);font-size:0.8rem}
+.action-buttons{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.action-buttons-spacer{flex:1}
+.pagination-bar{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;margin-top:14px;padding:10px}
+.pg-btn{background:white;color:var(--text-dark);border:1px solid var(--cream-dark);padding:6px 12px;border-radius:6px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:600;font-size:0.9rem;min-width:36px}
+.pg-btn:hover:not(:disabled){background:var(--cream);border-color:var(--gold)}
+.pg-btn:disabled{opacity:0.4;cursor:not-allowed}
+.pg-info{padding:0 12px;color:var(--text-medium);font-size:0.9rem;font-weight:600}
+.photo-section{margin-top:14px;padding:14px;background:var(--cream);border-radius:8px;border:1.5px dashed var(--cream-dark)}
+.photo-section-title{font-weight:700;color:var(--primary);margin-bottom:10px;font-family:'Reem Kufi'}
+.photo-preview-wrap{position:relative;display:inline-block;margin-bottom:10px}
+.photo-preview-img{max-width:200px;max-height:200px;border-radius:8px;border:2px solid var(--cream-dark);display:block}
+.photo-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn-upload{background:var(--primary);color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:600;font-size:0.9rem;display:inline-flex;align-items:center;gap:6px}
+.btn-upload:hover{opacity:0.9}
+.btn-remove-photo{background:#DC2626;color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:600;font-size:0.9rem}
+.btn-remove-photo:hover{background:#b91c1c}
+.upload-status{font-size:0.85rem;color:var(--text-medium);margin-top:6px}
+.upload-status.error{color:#DC2626}
+.upload-status.success{color:#0E7C3A}
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🕌</div>
+            <div>
+                <div class="sidebar-title">مقبرة صفوى</div>
+                <div class="sidebar-subtitle" id="userBadge">جاري التحميل...</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/" class="nav-link"><span>📊</span><span>الرئيسية</span></a>
+            <a href="/admin/graves.html" class="nav-link active"><span>🪦</span><span>إدارة القبور</span></a>
+            <a href="/staff/add.html" class="nav-link"><span>➕</span><span>إضافة قبر</span></a>
+            <a href="/map.html" class="nav-link" target="_blank"><span>🗺️</span><span>خريطة المقبرة</span></a>
+            <a href="/admin/announcements.html" class="nav-link"><span>⚰️</span><span>إعلانات الوفاة</span></a>
+            <a href="/admin/users.html" class="nav-link"><span>👥</span><span>المستخدمون</span></a>
+            <a href="/admin/audit.html" class="nav-link"><span>📋</span><span>سجل النشاط</span></a>
+            <a href="/admin/reports.html" class="nav-link"><span>📝</span><span>بلاغات الأخطاء</span></a>
+            <a href="/admin/settings.html" class="nav-link"><span>⚙️</span><span>الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/" class="nav-link"><span>🌐</span><span>عرض الموقع</span></a>
+            <button onclick="logout()" class="nav-link logout-btn"><span>🚪</span><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>🪦 إدارة القبور</h1>
+            <p id="countLabel">جاري التحميل...</p>
+        </div>
+
+        <div class="card">
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="openAddModal()">➕ إضافة قبر</button>
+                <button class="btn-export" onclick="exportToExcel()">📊 تصدير Excel</button>
+                <div class="action-buttons-spacer"></div>
+                <span style="font-size:0.85rem;color:var(--text-medium)" id="filteredCount"></span>
+            </div>
+
+            <div class="filter-bar">
+                <label>🔍 <input type="text" id="searchInput" placeholder="بحث بالاسم أو الرقم..." style="width:200px"></label>
+                <label>الجنس:
+                    <select id="filterGender">
+                        <option value="">الكل</option>
+                        <option value="ذكر">ذكر</option>
+                        <option value="انثى">أنثى</option>
+                    </select>
+                </label>
+                <label>المنطقة:
+                    <select id="filterSection">
+                        <option value="">الكل</option>
+                    </select>
+                </label>
+                <label>السنة:
+                    <select id="filterYear">
+                        <option value="">الكل</option>
+                    </select>
+                </label>
+                <button class="btn-export" style="background:#6B7280" onclick="clearFilters()">↻ تصفية</button>
+            </div>
+
+            <div class="table-container">
+                <table id="gravesTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="id">#<span class="sort-icon" id="sort-id"></span></th>
+                            <th class="sortable" data-sort="name">الاسم<span class="sort-icon" id="sort-name"></span></th>
+                            <th class="sortable" data-sort="gender">الجنس<span class="sort-icon" id="sort-gender"></span></th>
+                            <th class="sortable" data-sort="age">العمر<span class="sort-icon" id="sort-age"></span></th>
+                            <th class="sortable" data-sort="location">الموقع<span class="sort-icon" id="sort-location"></span></th>
+                            <th class="sortable" data-sort="death_date_gregorian">تاريخ الوفاة<span class="sort-icon" id="sort-death_date_gregorian"></span></th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gravesTableBody">
+                        <tr><td colspan="7" class="loading">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationBar" class="pagination-bar"></div>
+        </div>
+    </main>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="graveModal">
+    <div class="modal" style="max-width:700px">
+        <div class="modal-header">
+            <h3 id="modalTitle">➕ إضافة قبر جديد</h3>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="graveForm">
+                <input type="hidden" id="graveId">
+                <input type="hidden" id="latitude">
+                <input type="hidden" id="longitude">
+                <input type="hidden" id="grave_reference">
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1">
+                        <label class="form-label">الاسم الكامل *</label>
+                        <input type="text" class="form-input" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الجنس</label>
+                        <select class="form-select" id="gender">
+                            <option value="">-- اختر --</option>
+                            <option value="ذكر">ذكر</option>
+                            <option value="انثى">أنثى</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">العمر</label>
+                        <input type="number" class="form-input" id="age" min="0" max="150">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">يوم الوفاة</label>
+                        <select class="form-select" id="death_day">
+                            <option value="">-- اختر --</option>
+                            <option>السبت</option><option>الاحد</option><option>الاثنين</option>
+                            <option>الثلاثاء</option><option>الاربعاء</option><option>الخميس</option><option>الجمعة</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">التاريخ الميلادي</label>
+                        <input type="text" class="form-input" id="death_date_gregorian" placeholder="4/1/2023">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">التاريخ الهجري</label>
+                        <input type="text" class="form-input" id="death_date_hijri" placeholder="11/6/1444">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">المنطقة</label>
+                        <input type="text" class="form-input" id="section" value="أ">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">رقم الصف</label>
+                        <input type="number" class="form-input" id="row_number" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">رقم القبر</label>
+                        <input type="number" class="form-input" id="grave_number" min="1">
+                    </div>
+                </div>
+                <input type="hidden" id="photo_url">
+                <div class="photo-section">
+                    <div class="photo-section-title">📷 صورة المتوفى (اختياري)</div>
+                    <div id="photoPreviewWrap" class="photo-preview-wrap" style="display:none">
+                        <img id="photoPreviewImg" class="photo-preview-img" alt="معاينة">
+                    </div>
+                    <div class="photo-actions">
+                        <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handlePhotoUpload(event)">
+                        <button type="button" class="btn-upload" onclick="document.getElementById('photoFileInput').click()">📷 <span id="uploadBtnText">رفع صورة</span></button>
+                        <button type="button" class="btn-remove-photo" id="removePhotoBtn" onclick="removePhoto()" style="display:none">🗑️ حذف الصورة</button>
+                    </div>
+                    <div id="uploadStatus" class="upload-status"></div>
+                </div>
+
+                <hr style="margin:18px 0;border:none;border-top:1px solid var(--cream-dark)">
+                <h4 style="color:var(--primary);margin-bottom:10px;font-family:'Reem Kufi'">معلومات إضافية (اختياري)</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">مستلم الجنازة</label>
+                        <input type="text" class="form-input" id="receiver_name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">صلة القرابة</label>
+                        <input type="text" class="form-input" id="receiver_relationship">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">رقم جوال المستلم</label>
+                        <input type="text" class="form-input" id="receiver_phone">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ملاحظات</label>
+                    <textarea class="form-textarea" id="notes"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
+            <button type="button" class="btn btn-primary" onclick="saveGrave()">💾 حفظ</button>
+        </div>
+    </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+let allGraves = [];
+let filteredGraves = [];
+let searchTimeout;
+let currentSort = { col: 'id', dir: 'asc' };
+let currentPage = 1;
+const PAGE_SIZE = 200;
+
+function formatDate(s) {
+    if (!s) return '';
+    const parts = String(s).trim().split(/[\/\-\\.]/);
+    if (parts.length !== 3) return s;
+    const [d, m, y] = parts.map(p => p.trim());
+    if (!/^\d+$/.test(d) || !/^\d+$/.test(m) || !/^\d+$/.test(y)) return s;
+    return `${d.padStart(2,'0')} / ${m.padStart(2,'0')} / ${y}`;
+}
+
+async function loadGraves() {
+    try {
+        const r = await fetch('/api/graves');
+        const data = await r.json();
+        allGraves = data.results || [];
+        document.getElementById('countLabel').textContent = `إجمالي ${allGraves.length} قبر`;
+        populateFilters();
+        applyFilters();
+    } catch (e) {
+        document.getElementById('gravesTableBody').innerHTML = '<tr><td colspan="7" class="empty">❌ خطأ في التحميل</td></tr>';
+    }
+}
+
+function populateFilters() {
+    // Sections
+    const sections = [...new Set(allGraves.map(g => g.section).filter(Boolean))].sort();
+    const sectionSel = document.getElementById('filterSection');
+    sectionSel.innerHTML = '<option value="">الكل</option>' +
+        sections.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    // Years
+    const years = [...new Set(allGraves.map(g => extractYear(g.death_date_gregorian)).filter(Boolean))].sort().reverse();
+    const yearSel = document.getElementById('filterYear');
+    yearSel.innerHTML = '<option value="">الكل</option>' +
+        years.map(y => `<option value="${y}">${y}</option>`).join('');
+}
+
+function extractYear(date) {
+    if (!date) return null;
+    const m = String(date).match(/(\d{4})/);
+    return m ? m[1] : null;
+}
+
+function applyFilters() {
+    const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+    const gender = document.getElementById('filterGender').value;
+    const section = document.getElementById('filterSection').value;
+    const year = document.getElementById('filterYear').value;
+
+    filteredGraves = allGraves.filter(g => {
+        if (q && !(g.name || '').toLowerCase().includes(q) &&
+            !(g.grave_reference || '').toLowerCase().includes(q) &&
+            String(g.id) !== q) return false;
+        if (gender && g.gender !== gender) return false;
+        if (section && g.section !== section) return false;
+        if (year && extractYear(g.death_date_gregorian) !== year) return false;
+        return true;
+    });
+
+    currentPage = 1;
+    sortAndRender();
+    document.getElementById('filteredCount').textContent =
+        filteredGraves.length === allGraves.length
+            ? `${allGraves.length} قبر`
+            : `${filteredGraves.length} من ${allGraves.length} قبر`;
+}
+
+// Parse various date formats to a sortable YYYYMMDD number
+function dateToSortable(str) {
+    if (!str) return -Infinity;
+    const s = String(str).trim();
+    // Try matching d/m/yyyy or dd/mm/yyyy (or with separators - . /)
+    let m = s.match(/(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{2,4})/);
+    if (m) {
+        let d = parseInt(m[1]), mo = parseInt(m[2]), y = parseInt(m[3]);
+        if (y < 100) y += 2000;
+        return y * 10000 + mo * 100 + d;
+    }
+    // Try yyyy-mm-dd
+    m = s.match(/(\d{4})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})/);
+    if (m) return parseInt(m[1]) * 10000 + parseInt(m[2]) * 100 + parseInt(m[3]);
+    // Try year only
+    m = s.match(/(\d{4})/);
+    if (m) return parseInt(m[1]) * 10000;
+    return -Infinity;
+}
+
+function sortAndRender() {
+    const { col, dir } = currentSort;
+    const mul = dir === 'asc' ? 1 : -1;
+    filteredGraves.sort((a, b) => {
+        let av, bv;
+        if (col === 'location') {
+            av = `${a.section || ''} ${String(a.row_number || 0).padStart(3, '0')} ${String(a.grave_number || 0).padStart(4, '0')}`;
+            bv = `${b.section || ''} ${String(b.row_number || 0).padStart(3, '0')} ${String(b.grave_number || 0).padStart(4, '0')}`;
+        } else if (col === 'death_date_gregorian' || col === 'death_date_hijri') {
+            av = dateToSortable(a[col]);
+            bv = dateToSortable(b[col]);
+        } else if (col === 'age' || col === 'id') {
+            av = a[col] != null ? Number(a[col]) : -Infinity;
+            bv = b[col] != null ? Number(b[col]) : -Infinity;
+        } else {
+            av = (a[col] || '').toString();
+            bv = (b[col] || '').toString();
+        }
+        if (av < bv) return -1 * mul;
+        if (av > bv) return 1 * mul;
+        return 0;
+    });
+    renderTable(filteredGraves);
+    updateSortIcons();
+}
+
+function updateSortIcons() {
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+    const icon = document.getElementById(`sort-${currentSort.col}`);
+    if (icon) icon.textContent = currentSort.dir === 'asc' ? '▲' : '▼';
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterGender').value = '';
+    document.getElementById('filterSection').value = '';
+    document.getElementById('filterYear').value = '';
+    currentSort = { col: 'id', dir: 'asc' };
+    applyFilters();
+}
+
+function renderTable(graves) {
+    const body = document.getElementById('gravesTableBody');
+    if (graves.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="empty"><div class="empty-icon">📭</div>لا توجد نتائج</td></tr>';
+        renderPagination(0, 0);
+        return;
+    }
+    const totalPages = Math.max(1, Math.ceil(graves.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageGraves = graves.slice(start, start + PAGE_SIZE);
+
+    body.innerHTML = pageGraves.map(g => `
+        <tr>
+            <td>${g.id}</td>
+            <td><strong>${escapeHtml(g.name)}</strong></td>
+            <td><span class="badge ${g.gender === 'انثى' ? 'badge-female' : 'badge-male'}">${escapeHtml(g.gender || '-')}</span></td>
+            <td>${g.age || '-'}</td>
+            <td>
+                <span class="badge badge-area-${(g.section === 'أ' || g.section === 'A') ? 'a' : 'b'}">${escapeHtml(g.section || '-')}</span>
+                ${g.row_number ? `${g.row_number}-${g.grave_number}` : ''}
+            </td>
+            <td style="white-space:nowrap;font-size:0.85rem">${escapeHtml(formatDate(g.death_date_gregorian) || '-')}</td>
+            <td style="white-space:nowrap">
+                <button class="action-btn action-btn-edit" onclick="editGrave(${g.id})">✏️ تعديل</button>
+                <button class="action-btn action-btn-delete" onclick="deleteGrave(${g.id}, '${escapeHtml(g.name).replace(/'/g, "&apos;")}')">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
+
+    renderPagination(currentPage, totalPages);
+}
+
+function renderPagination(page, totalPages) {
+    const el = document.getElementById('paginationBar');
+    if (!el) return;
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+        <button class="pg-btn" ${page<=1?'disabled':''} onclick="gotoPage(1)">«</button>
+        <button class="pg-btn" ${page<=1?'disabled':''} onclick="gotoPage(${page-1})">‹</button>
+        <span class="pg-info">صفحة ${page} من ${totalPages}</span>
+        <button class="pg-btn" ${page>=totalPages?'disabled':''} onclick="gotoPage(${page+1})">›</button>
+        <button class="pg-btn" ${page>=totalPages?'disabled':''} onclick="gotoPage(${totalPages})">»</button>
+    `;
+}
+
+function gotoPage(n) {
+    currentPage = n;
+    renderTable(filteredGraves);
+}
+
+// Header click sort
+document.querySelectorAll('.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+        const col = th.dataset.sort;
+        if (currentSort.col === col) {
+            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort = { col, dir: 'asc' };
+        }
+        sortAndRender();
+    });
+});
+
+// Filter changes
+['searchInput', 'filterGender', 'filterSection', 'filterYear'].forEach(id => {
+    document.getElementById(id).addEventListener(id === 'searchInput' ? 'input' : 'change', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFilters, 150);
+    });
+});
+
+// Excel export
+function exportToExcel() {
+    const data = filteredGraves.length > 0 ? filteredGraves : allGraves;
+    if (data.length === 0) { showToast('لا توجد بيانات للتصدير', true); return; }
+
+    const rows = data.map(g => ({
+        '#': g.id,
+        'الاسم': g.name || '',
+        'الجنس': g.gender || '',
+        'العمر': g.age || '',
+        'يوم الوفاة': g.death_day || '',
+        'التاريخ الميلادي': g.death_date_gregorian || '',
+        'التاريخ الهجري': g.death_date_hijri || '',
+        'المنطقة': g.section || '',
+        'الصف': g.row_number || '',
+        'رقم القبر': g.grave_number || '',
+        'المرجع': g.grave_reference || '',
+        'مستلم الجنازة': g.receiver_name || '',
+        'صلة القرابة': g.receiver_relationship || '',
+        'جوال المستلم': g.receiver_phone || '',
+        'خط العرض': g.latitude || '',
+        'خط الطول': g.longitude || '',
+        'ملاحظات': g.notes || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    // Set RTL
+    if (!ws['!props']) ws['!props'] = {};
+    ws['!props'].RTL = true;
+    // Auto width
+    ws['!cols'] = Object.keys(rows[0]).map(k => ({ wch: Math.max(k.length, 15) }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'القبور');
+
+    const today = new Date().toISOString().slice(0, 10);
+    const fname = `مقبرة-صفوى-${today}.xlsx`;
+    XLSX.writeFile(wb, fname);
+    showToast(`✅ تم تصدير ${rows.length} قبر`);
+}
+
+function setPhotoPreview(url) {
+    const wrap = document.getElementById('photoPreviewWrap');
+    const img = document.getElementById('photoPreviewImg');
+    const removeBtn = document.getElementById('removePhotoBtn');
+    const uploadBtnText = document.getElementById('uploadBtnText');
+    document.getElementById('photo_url').value = url || '';
+    if (url) {
+        img.src = url;
+        wrap.style.display = 'inline-block';
+        removeBtn.style.display = 'inline-flex';
+        uploadBtnText.textContent = 'تغيير الصورة';
+    } else {
+        wrap.style.display = 'none';
+        removeBtn.style.display = 'none';
+        uploadBtnText.textContent = 'رفع صورة';
+        img.src = '';
+    }
+}
+
+async function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const status = document.getElementById('uploadStatus');
+    status.className = 'upload-status';
+    status.textContent = '⏳ جاري الرفع...';
+
+    if (file.size > 5 * 1024 * 1024) {
+        status.className = 'upload-status error';
+        status.textContent = '❌ الحجم أكبر من 5 ميجابايت';
+        event.target.value = '';
+        return;
+    }
+
+    try {
+        const form = new FormData();
+        form.append('photo', file);
+        const r = await fetch('/api/upload/photo', { method: 'POST', body: form });
+        const data = await r.json();
+        if (data.ok && data.url) {
+            setPhotoPreview(data.url);
+            status.className = 'upload-status success';
+            status.textContent = '✅ تم رفع الصورة';
+        } else {
+            status.className = 'upload-status error';
+            status.textContent = '❌ ' + (data.error || 'فشل الرفع');
+        }
+    } catch (e) {
+        status.className = 'upload-status error';
+        status.textContent = '❌ خطأ في الرفع';
+    } finally {
+        event.target.value = '';
+    }
+}
+
+async function removePhoto() {
+    const url = document.getElementById('photo_url').value;
+    if (!url) return setPhotoPreview('');
+    if (!confirm('حذف الصورة؟')) return;
+    try {
+        await fetch('/api/upload/photo', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+    } catch (e) {}
+    setPhotoPreview('');
+    document.getElementById('uploadStatus').textContent = '';
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = '➕ إضافة قبر جديد';
+    document.getElementById('graveForm').reset();
+    document.getElementById('graveId').value = '';
+    document.getElementById('section').value = 'أ';
+    setPhotoPreview('');
+    document.getElementById('uploadStatus').textContent = '';
+    document.getElementById('graveModal').classList.add('show');
+}
+
+function editGrave(id) {
+    const g = allGraves.find(x => x.id === id);
+    if (!g) return;
+    document.getElementById('modalTitle').textContent = '✏️ تعديل قبر';
+    document.getElementById('graveId').value = g.id;
+    document.getElementById('name').value = g.name || '';
+    document.getElementById('gender').value = g.gender || '';
+    document.getElementById('age').value = g.age || '';
+    document.getElementById('death_day').value = g.death_day || '';
+    document.getElementById('death_date_gregorian').value = g.death_date_gregorian || '';
+    document.getElementById('death_date_hijri').value = g.death_date_hijri || '';
+    document.getElementById('section').value = g.section || 'أ';
+    document.getElementById('row_number').value = g.row_number || '';
+    document.getElementById('grave_number').value = g.grave_number || '';
+    document.getElementById('receiver_name').value = g.receiver_name || '';
+    document.getElementById('receiver_relationship').value = g.receiver_relationship || '';
+    document.getElementById('receiver_phone').value = g.receiver_phone || '';
+    document.getElementById('notes').value = g.notes || '';
+    document.getElementById('latitude').value = g.latitude != null ? g.latitude : '';
+    document.getElementById('longitude').value = g.longitude != null ? g.longitude : '';
+    document.getElementById('grave_reference').value = g.grave_reference || '';
+    setPhotoPreview(g.photo_url || '');
+    document.getElementById('uploadStatus').textContent = '';
+    document.getElementById('graveModal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('graveModal').classList.remove('show');
+}
+
+async function saveGrave() {
+    const id = document.getElementById('graveId').value;
+    const body = {
+        name: document.getElementById('name').value.trim(),
+        gender: document.getElementById('gender').value || null,
+        age: document.getElementById('age').value ? parseInt(document.getElementById('age').value) : null,
+        death_day: document.getElementById('death_day').value || null,
+        death_date_gregorian: document.getElementById('death_date_gregorian').value.trim() || null,
+        death_date_hijri: document.getElementById('death_date_hijri').value.trim() || null,
+        section: document.getElementById('section').value.trim() || 'أ',
+        row_number: document.getElementById('row_number').value ? parseInt(document.getElementById('row_number').value) : null,
+        grave_number: document.getElementById('grave_number').value ? parseInt(document.getElementById('grave_number').value) : null,
+        receiver_name: document.getElementById('receiver_name').value.trim() || null,
+        receiver_relationship: document.getElementById('receiver_relationship').value.trim() || null,
+        receiver_phone: document.getElementById('receiver_phone').value.trim() || null,
+        notes: document.getElementById('notes').value.trim() || null,
+        photo_url: document.getElementById('photo_url').value || null,
+        latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+        longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+        grave_reference: document.getElementById('grave_reference').value.trim() || null
+    };
+
+    if (!body.name) { showToast('الاسم مطلوب', true); return; }
+
+    try {
+        const url = id ? `/api/grave/${id}` : '/api/graves';
+        const method = id ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await r.json();
+        if (data.ok || data.id) {
+            showToast(id ? '✅ تم التعديل' : '✅ تم الإضافة');
+            closeModal();
+            loadGraves();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل الحفظ'), true);
+        }
+    } catch (e) {
+        showToast('❌ خطأ في الحفظ', true);
+    }
+}
+
+async function deleteGrave(id, name) {
+    if (!confirmDelete(`هل تريد حذف "${name}"؟ لا يمكن التراجع.`)) return;
+    try {
+        const r = await fetch(`/api/grave/${id}`, { method: 'DELETE' });
+        const data = await r.json();
+        if (data.ok) {
+            showToast('✅ تم الحذف');
+            loadGraves();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل الحذف'), true);
+        }
+    } catch (e) {
+        showToast('❌ خطأ', true);
+    }
+}
+
+loadGraves();
+</script>
+</body>
+</html>

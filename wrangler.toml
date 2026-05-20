@@ -1,0 +1,16 @@
+name = "safwa-cemetery"
+compatibility_date = "2026-01-01"
+pages_build_output_dir = "."
+
+[[kv_namespaces]]
+binding = "VISITORS"
+id = "c07ccab8865b4449bff104644fe42d61"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "safwa-cemetery-db"
+database_id = "3fcb49cf-343e-4f13-8bb2-a1ac450af8a2"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "safwa-cemetery-photos"

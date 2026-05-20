@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0E4D3F" rx="80"/>
+  <circle cx="256" cy="200" r="100" fill="none" stroke="#D4A93A" stroke-width="6"/>
+  <text x="256" y="240" font-size="120" text-anchor="middle" fill="#D4A93A" font-family="serif">🕌</text>
+  <text x="256" y="380" font-size="40" text-anchor="middle" fill="#FAF6EE" font-family="serif" font-weight="bold">مقبرة صفوى</text>
+  <text x="256" y="440" font-size="22" text-anchor="middle" fill="#D4A93A" font-family="serif">Safwa Cemetery</text>
+</svg>

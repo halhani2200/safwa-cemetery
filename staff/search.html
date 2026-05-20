@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>بحث وتعديل - مقبرة صفوى</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#0E4D3F;--primary-dark:#08362C;--gold:#B8860B;--cream:#FAF6EE;--cream-dark:#F0E9D8;--text-dark:#1F2937;--text-medium:#4B5563;--white:#FFFFFF;--red:#DC2626}
+body{font-family:'Tajawal',sans-serif;background:#F3F4F6;color:var(--text-dark);min-height:100vh}
+.staff-header{background:linear-gradient(180deg,var(--primary) 0%,var(--primary-dark) 100%);color:white;padding:14px 16px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:10}
+.back-btn{background:rgba(255,255,255,0.1);border:none;color:white;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif}
+.staff-title{font-family:'Reem Kufi',sans-serif;flex:1}
+.container{max-width:700px;margin:0 auto;padding:16px}
+.search-box{background:white;border-radius:12px;padding:12px;display:flex;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:14px}
+.search-input{flex:1;padding:12px;border:1.5px solid var(--cream-dark);border-radius:8px;font-family:'Tajawal',sans-serif;font-size:0.95rem}
+.search-input:focus{outline:none;border-color:var(--gold)}
+.results-list{display:flex;flex-direction:column;gap:8px}
+.result-item{background:white;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;gap:12px;align-items:center;border-right:3px solid var(--gold)}
+.result-avatar{width:44px;height:44px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.result-info{flex:1;min-width:0}
+.result-name{font-weight:700;color:var(--text-dark);margin-bottom:2px;font-size:0.95rem}
+.result-meta{font-size:0.8rem;color:var(--text-medium)}
+.btn-edit{background:var(--primary);color:white;border:none;padding:8px 12px;border-radius:8px;font-family:'Tajawal',sans-serif;cursor:pointer;font-size:0.85rem}
+.empty{padding:40px;text-align:center;color:var(--text-medium)}
+.loading{padding:30px;text-align:center;color:var(--text-medium)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700}
+.badge-area-a{background:#DBEAFE;color:#1E40AF}
+.badge-male{background:#D1FAE5;color:#065F46}
+.badge-female{background:#FCE7F3;color:#9D174D}
+</style>
+</head>
+<body>
+<header class="staff-header">
+    <button class="back-btn" onclick="window.location.href='/staff/'">←</button>
+    <div class="staff-title">🔍 بحث القبور</div>
+</header>
+
+<div class="container">
+    <div class="search-box">
+        <input type="text" class="search-input" id="searchInput" placeholder="ابحث بالاسم أو الموقع..." autofocus>
+    </div>
+    <div class="results-list" id="resultsList">
+        <div class="loading">جاري التحميل...</div>
+    </div>
+</div>
+
+<script>
+let allGraves = [];
+let searchTimeout;
+
+async function init() {
+    try {
+        const r = await fetch('/api/auth/me');
+        if (r.status === 401) { window.location.href = '/login.html'; return; }
+        const auth = await r.json();
+        if (!auth.authenticated) { window.location.href = '/login.html'; return; }
+
+        const gr = await fetch('/api/graves');
+        const data = await gr.json();
+        allGraves = data.results || [];
+        render(allGraves);
+    } catch (e) {
+        document.getElementById('resultsList').innerHTML = '<div class="empty">❌ خطأ</div>';
+    }
+}
+
+function render(items) {
+    const list = document.getElementById('resultsList');
+    if (items.length === 0) {
+        list.innerHTML = '<div class="empty">لا توجد نتائج</div>';
+        return;
+    }
+    list.innerHTML = items.slice(0, 100).map(g => `
+        <div class="result-item">
+            <div class="result-avatar">${g.gender === 'انثى' ? '👤' : '👤'}</div>
+            <div class="result-info">
+                <div class="result-name">${escapeHtml(g.name)}</div>
+                <div class="result-meta">
+                    <span class="badge ${g.gender === 'انثى' ? 'badge-female' : 'badge-male'}">${escapeHtml(g.gender || '-')}</span>
+                    <span class="badge badge-area-a">${escapeHtml(g.section || '-')} ${g.row_number || '-'}-${g.grave_number || '-'}</span>
+                    ${g.death_date_gregorian ? '• ' + escapeHtml(g.death_date_gregorian) : ''}
+                </div>
+            </div>
+            <a class="btn-edit" href="/staff/edit.html?id=${g.id}">✏️ تعديل</a>
+        </div>
+    `).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', e => {
+    clearTimeout(searchTimeout);
+    const q = e.target.value.trim().toLowerCase();
+    searchTimeout = setTimeout(() => {
+        if (!q) { render(allGraves); return; }
+        const filtered = allGraves.filter(g =>
+            (g.name || '').toLowerCase().includes(q) ||
+            (g.grave_reference || '').toLowerCase().includes(q)
+        );
+        render(filtered);
+    }, 200);
+});
+
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+init();
+</script>
+</body>
+</html>

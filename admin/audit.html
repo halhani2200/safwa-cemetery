@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>سجل النشاط - مقبرة صفوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+<style>
+.user-card{background:white;border-radius:10px;padding:14px;border:2px solid var(--cream-dark);transition:all 0.15s}
+.user-card:hover{border-color:var(--gold);cursor:pointer}
+.user-card.active{border-color:var(--primary);background:var(--cream)}
+.user-card-name{font-weight:700;color:var(--text-dark);font-size:1rem}
+.user-card-meta{font-size:0.8rem;color:var(--text-medium);margin-top:4px}
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:18px}
+.audit-row{padding:10px 14px;border-bottom:1px solid var(--cream-dark);display:grid;grid-template-columns:140px 100px 1fr;gap:12px;font-size:0.9rem;align-items:start}
+.audit-row:hover{background:var(--cream)}
+.audit-time{color:var(--text-medium);font-size:0.85rem;white-space:nowrap}
+.audit-action{font-weight:700}
+.audit-action-login{color:#10B981}
+.audit-action-create{color:#3B82F6}
+.audit-action-update{color:#D97706}
+.audit-action-delete{color:#DC2626}
+.audit-action-broadcast{color:#7C3AED}
+.audit-target{color:var(--text-dark)}
+.audit-target small{color:var(--text-medium);display:block;margin-top:2px}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--cream);border-radius:8px}
+.filter-bar select,.filter-bar button{padding:6px 12px;border-radius:6px;border:1px solid var(--cream-dark);background:white;font-family:'Tajawal',sans-serif;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🕌</div>
+            <div><div class="sidebar-title">مقبرة صفوى</div><div class="sidebar-subtitle" id="userBadge">...</div></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/" class="nav-link"><span>📊</span><span>الرئيسية</span></a>
+            <a href="/admin/graves.html" class="nav-link"><span>🪦</span><span>إدارة القبور</span></a>
+            <a href="/staff/add.html" class="nav-link"><span>➕</span><span>إضافة قبر</span></a>
+            <a href="/map.html" class="nav-link" target="_blank"><span>🗺️</span><span>خريطة المقبرة</span></a>
+            <a href="/admin/announcements.html" class="nav-link"><span>⚰️</span><span>إعلانات الوفاة</span></a>
+            <a href="/admin/users.html" class="nav-link"><span>👥</span><span>المستخدمون</span></a>
+            <a href="/admin/audit.html" class="nav-link active"><span>📋</span><span>سجل النشاط</span></a>
+            <a href="/admin/reports.html" class="nav-link"><span>📝</span><span>بلاغات الأخطاء</span></a>
+            <a href="/admin/settings.html" class="nav-link"><span>⚙️</span><span>الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/" class="nav-link"><span>🌐</span><span>عرض الموقع</span></a>
+            <button onclick="logout()" class="nav-link logout-btn"><span>🚪</span><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>📋 سجل النشاط (Audit Log)</h1>
+            <p id="statsLabel">جاري التحميل...</p>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom:10px">📊 المستخدمون</h2>
+            <p style="color:var(--text-medium);font-size:0.9rem;margin-bottom:10px">اضغط على أي مستخدم لعرض سجل نشاطه</p>
+            <div class="user-grid" id="userGrid"></div>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <strong style="margin-left:8px;align-self:center">فلترة:</strong>
+                <select id="filterAction" onchange="loadAudit()">
+                    <option value="">كل العمليات</option>
+                    <option value="login">تسجيل دخول</option>
+                    <option value="create">إنشاء</option>
+                    <option value="update">تعديل</option>
+                    <option value="delete">حذف</option>
+                    <option value="broadcast">إرسال إشعار</option>
+                </select>
+                <select id="filterEntity" onchange="loadAudit()">
+                    <option value="">كل الكيانات</option>
+                    <option value="grave">قبر</option>
+                    <option value="user">مستخدم</option>
+                    <option value="announcement">إعلان</option>
+                    <option value="section">منطقة</option>
+                    <option value="session">جلسة دخول</option>
+                    <option value="settings">إعدادات</option>
+                    <option value="push">إشعار</option>
+                </select>
+                <button onclick="clearFilters()">↻ مسح الفلاتر</button>
+                <span id="userFilterChip" style="display:none;margin-right:auto;padding:6px 12px;background:var(--primary);color:white;border-radius:20px;font-size:0.85rem">
+                    <span id="userFilterText"></span>
+                    <button onclick="clearUserFilter()" style="background:transparent;color:white;border:none;cursor:pointer;font-size:1.1rem;padding:0 4px;margin-right:4px">✕</button>
+                </span>
+            </div>
+            <h2 id="auditTitle">آخر العمليات</h2>
+            <div id="auditList"><div class="loading">جاري التحميل...</div></div>
+        </div>
+    </main>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+let currentUserId = null;
+let userStats = [];
+
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+const actionLabels = {
+    login: 'دخول',
+    logout: 'خروج',
+    create: 'إنشاء',
+    update: 'تعديل',
+    delete: 'حذف',
+    broadcast: 'إرسال إشعار'
+};
+const entityLabels = {
+    grave: 'قبر',
+    user: 'مستخدم',
+    announcement: 'إعلان',
+    section: 'منطقة',
+    session: 'جلسة',
+    settings: 'إعدادات',
+    push: 'إشعار'
+};
+const roleLabels = { admin: 'مدير', staff: 'موظف', volunteer: 'متطوع' };
+
+function formatTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const date = d.toLocaleDateString('ar-EG', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const time = d.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
+    return `<div>${date}<br><strong>${time}</strong></div>`;
+}
+
+function relativeTime(iso) {
+    if (!iso) return 'لم يسجّل دخول';
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'الآن';
+    if (mins < 60) return `منذ ${mins} د`;
+    if (mins < 1440) return `منذ ${Math.floor(mins/60)} س`;
+    return `منذ ${Math.floor(mins/1440)} يوم`;
+}
+
+async function loadAudit() {
+    const action = document.getElementById('filterAction').value;
+    const entity = document.getElementById('filterEntity').value;
+    const params = new URLSearchParams();
+    if (currentUserId) params.append('user_id', currentUserId);
+    if (action) params.append('action', action);
+    if (entity) params.append('entity_type', entity);
+    params.append('limit', '200');
+
+    try {
+        const r = await fetch('/api/audit?' + params);
+        const data = await r.json();
+        userStats = data.user_stats || [];
+        renderUserStats();
+        renderAudit(data.results || []);
+        document.getElementById('statsLabel').textContent =
+            `${userStats.length} مستخدم • ${data.count} عملية في النتائج`;
+    } catch (e) {
+        document.getElementById('auditList').innerHTML = '<div class="empty">❌ خطأ</div>';
+    }
+}
+
+function renderUserStats() {
+    const grid = document.getElementById('userGrid');
+    if (userStats.length === 0) {
+        grid.innerHTML = '<div class="empty">لا يوجد مستخدمون</div>';
+        return;
+    }
+    grid.innerHTML = userStats.map(s => `
+        <div class="user-card ${currentUserId === s.user_id ? 'active' : ''}" onclick="selectUser(${s.user_id})">
+            <div class="user-card-name">${escapeHtml(s.username || '-')}</div>
+            <div class="user-card-meta">
+                ${escapeHtml(roleLabels[s.role] || s.role || '')}
+                • ${s.actions_count || 0} عملية<br>
+                آخر دخول: ${s.last_login_at ? relativeTime(s.last_login_at) : 'لم يدخل'}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAudit(items) {
+    const container = document.getElementById('auditList');
+    if (!items.length) {
+        container.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>لا توجد عمليات</div>';
+        return;
+    }
+    container.innerHTML = items.map(a => {
+        const actionCls = `audit-action-${a.action}`;
+        const actLabel = actionLabels[a.action] || a.action;
+        const entLabel = entityLabels[a.entity_type] || a.entity_type;
+        let details = '';
+        if (a.details) {
+            try {
+                const d = typeof a.details === 'string' ? JSON.parse(a.details) : a.details;
+                if (d.name) details = `<small>${escapeHtml(d.name)}</small>`;
+                else if (d.title) details = `<small>${escapeHtml(d.title)}</small>`;
+                else if (d.username) details = `<small>${escapeHtml(d.username)}</small>`;
+                else if (d.code) details = `<small>${escapeHtml(d.code)}</small>`;
+            } catch (e) {}
+        }
+        return `
+        <div class="audit-row">
+            <div class="audit-time">${formatTime(a.created_at)}</div>
+            <div>
+                <span class="audit-action ${actionCls}">${actLabel}</span>
+                <small style="display:block;color:#9CA3AF">${entLabel}${a.entity_id ? ' #' + a.entity_id : ''}</small>
+            </div>
+            <div class="audit-target">
+                <strong>${escapeHtml(a.username || 'مجهول')}</strong>
+                <span style="color:#9CA3AF;font-size:0.85rem">(${roleLabels[a.role] || a.role || '?'})</span>
+                ${details}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function selectUser(userId) {
+    currentUserId = userId === currentUserId ? null : userId;
+    updateUserChip();
+    loadAudit();
+}
+
+function updateUserChip() {
+    const chip = document.getElementById('userFilterChip');
+    const text = document.getElementById('userFilterText');
+    if (currentUserId) {
+        const u = userStats.find(s => s.user_id === currentUserId);
+        text.textContent = '👤 ' + (u ? u.username : '...');
+        chip.style.display = 'inline-block';
+        document.getElementById('auditTitle').textContent = `سجل ${u ? u.username : ''}`;
+    } else {
+        chip.style.display = 'none';
+        document.getElementById('auditTitle').textContent = 'آخر العمليات';
+    }
+}
+
+function clearUserFilter() {
+    currentUserId = null;
+    updateUserChip();
+    loadAudit();
+}
+
+function clearFilters() {
+    document.getElementById('filterAction').value = '';
+    document.getElementById('filterEntity').value = '';
+    currentUserId = null;
+    updateUserChip();
+    loadAudit();
+}
+
+// Pre-select user from URL ?user_id=N
+const urlUserId = getQueryParam('user_id');
+if (urlUserId) {
+    currentUserId = parseInt(urlUserId);
+    setTimeout(updateUserChip, 100);
+}
+
+loadAudit();
+</script>
+</body>
+</html>

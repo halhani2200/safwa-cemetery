@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Capacitor / native build artifacts
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+android/app/debug/
+ios/App/Pods/
+ios/App/build/
+ios/App/output/
+*.ipa
+*.apk
+*.aab
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keystore (NEVER commit these to public repos)
+*.keystore
+*.jks
+keystore.properties

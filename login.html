@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>تسجيل الدخول - مقبرة صفوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#0E4D3F;--primary-dark:#08362C;--primary-light:#1A6B57;--gold:#B8860B;--gold-light:#D4A93A;--cream:#FAF6EE;--cream-dark:#F0E9D8;--text-dark:#1F2937;--text-medium:#4B5563;--white:#FFFFFF;--red:#DC2626}
+body{font-family:'Tajawal',sans-serif;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;color:var(--text-dark)}
+body::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background-image:repeating-linear-gradient(45deg,transparent,transparent 35px,rgba(184,134,11,0.03) 35px,rgba(184,134,11,0.03) 70px);pointer-events:none}
+.login-card{background:var(--white);border-radius:20px;padding:40px 36px;box-shadow:0 25px 60px rgba(0,0,0,0.3);max-width:420px;width:100%;position:relative;z-index:1}
+.login-header{text-align:center;margin-bottom:30px}
+.login-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:2px solid var(--gold);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:14px}
+.login-title{font-family:'Reem Kufi',sans-serif;font-size:1.6rem;color:var(--primary);margin-bottom:4px}
+.login-subtitle{color:var(--text-medium);font-size:0.95rem}
+.form-group{margin-bottom:18px}
+.form-label{display:block;color:var(--text-medium);font-size:0.9rem;margin-bottom:6px;font-weight:500}
+.form-input{width:100%;padding:14px 16px;border:1.5px solid var(--cream-dark);border-radius:10px;font-family:'Tajawal',sans-serif;font-size:1rem;color:var(--text-dark);transition:all 0.2s;background:var(--cream)}
+.form-input:focus{outline:none;border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(184,134,11,0.1)}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:var(--white);border:none;padding:14px;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;transition:all 0.2s;margin-top:8px}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(14,77,63,0.3)}
+.btn-login:disabled{opacity:0.6;cursor:not-allowed}
+.error-message{background:#FEE2E2;color:#991B1B;padding:12px;border-radius:8px;margin-bottom:16px;font-size:0.9rem;display:none}
+.error-message.show{display:block}
+.footer-text{text-align:center;margin-top:24px;color:var(--text-medium);font-size:0.85rem}
+.footer-text a{color:var(--gold);text-decoration:none;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="login-header">
+        <div class="login-icon">🔐</div>
+        <h1 class="login-title">تسجيل الدخول</h1>
+        <p class="login-subtitle">موقع مقبرة صفوى - لوحة التحكم</p>
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label class="form-label" for="username">اسم المستخدم</label>
+            <input type="text" id="username" class="form-input" required autocomplete="username" autocapitalize="off">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="password">كلمة المرور</label>
+            <input type="password" id="password" class="form-input" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-login" id="loginBtn">
+            <span id="loginBtnText">تسجيل الدخول</span>
+        </button>
+    </form>
+
+    <p class="footer-text"><a href="/">→ العودة للموقع</a></p>
+</div>
+
+<script>
+const form = document.getElementById('loginForm');
+const errorBox = document.getElementById('errorMessage');
+const btn = document.getElementById('loginBtn');
+const btnText = document.getElementById('loginBtnText');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.remove('show');
+    btn.disabled = true;
+    btnText.textContent = 'جاري الدخول...';
+
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            })
+        });
+        const data = await response.json();
+
+        if (data.ok) {
+            btnText.textContent = '✓ تم!';
+            window.location.href = data.redirect || '/admin/';
+        } else {
+            errorBox.textContent = '⚠️ ' + (data.error || 'فشل تسجيل الدخول');
+            errorBox.classList.add('show');
+            btn.disabled = false;
+            btnText.textContent = 'تسجيل الدخول';
+        }
+    } catch (e) {
+        errorBox.textContent = '⚠️ خطأ في الاتصال';
+        errorBox.classList.add('show');
+        btn.disabled = false;
+        btnText.textContent = 'تسجيل الدخول';
+    }
+});
+
+// Check if already logged in
+(async () => {
+    try {
+        const r = await fetch('/api/auth/me');
+        const d = await r.json();
+        if (d.authenticated) {
+            window.location.href = d.user.role === 'admin' ? '/admin/' : '/staff/';
+        }
+    } catch (e) {}
+})();
+</script>
+
+</body>
+</html>

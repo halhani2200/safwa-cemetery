@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>لوحة الإدارة - مقبرة صفوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🕌</div>
+            <div>
+                <div class="sidebar-title">مقبرة صفوى</div>
+                <div class="sidebar-subtitle" id="userBadge">جاري التحميل...</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/" class="nav-link active"><span>📊</span><span>الرئيسية</span></a>
+            <a href="/admin/graves.html" class="nav-link"><span>🪦</span><span>إدارة القبور</span></a>
+            <a href="/staff/add.html" class="nav-link"><span>➕</span><span>إضافة قبر</span></a>
+            <a href="/map.html" class="nav-link" target="_blank"><span>🗺️</span><span>خريطة المقبرة</span></a>
+            <a href="/admin/announcements.html" class="nav-link"><span>⚰️</span><span>إعلانات الوفاة</span></a>
+            <a href="/admin/users.html" class="nav-link"><span>👥</span><span>المستخدمون</span></a>
+            <a href="/admin/audit.html" class="nav-link"><span>📋</span><span>سجل النشاط</span></a>
+            <a href="/admin/reports.html" class="nav-link"><span>📝</span><span>بلاغات الأخطاء</span></a>
+            <a href="/admin/settings.html" class="nav-link"><span>⚙️</span><span>الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/" class="nav-link"><span>🌐</span><span>عرض الموقع</span></a>
+            <button onclick="logout()" class="nav-link logout-btn"><span>🚪</span><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>📊 لوحة التحكم</h1>
+            <p>مرحباً بك في لوحة إدارة موقع مقبرة صفوى</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🪦</div>
+                <div class="stat-value" id="totalGraves">—</div>
+                <div class="stat-label">قبور مسجلة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👨</div>
+                <div class="stat-value" id="totalMen">—</div>
+                <div class="stat-label">ذكور</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👩</div>
+                <div class="stat-value" id="totalWomen">—</div>
+                <div class="stat-label">إناث</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="totalUsers">—</div>
+                <div class="stat-label">مستخدمون نشطون</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-value" id="pendingReports">—</div>
+                <div class="stat-label">بلاغات معلّقة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👁️</div>
+                <div class="stat-value" id="visitorCount">—</div>
+                <div class="stat-label">عدد الزوار</div>
+            </div>
+        </div>
+
+        <section class="card">
+            <h2>🔥 إجراءات سريعة</h2>
+            <div class="quick-actions">
+                <a href="/admin/graves.html" class="quick-action">
+                    <span class="quick-icon">🪦</span>
+                    <div>
+                        <div class="quick-title">إدارة القبور</div>
+                        <div class="quick-desc">عرض وإضافة وتعديل القبور</div>
+                    </div>
+                </a>
+                <a href="/admin/users.html" class="quick-action">
+                    <span class="quick-icon">➕</span>
+                    <div>
+                        <div class="quick-title">إضافة موظف/متطوع</div>
+                        <div class="quick-desc">إنشاء حساب جديد</div>
+                    </div>
+                </a>
+                <a href="/admin/settings.html" class="quick-action">
+                    <span class="quick-icon">🔑</span>
+                    <div>
+                        <div class="quick-title">الإعدادات</div>
+                        <div class="quick-desc">API Keys، أوقات الزيارة، إلخ</div>
+                    </div>
+                </a>
+                <a href="/admin/reports.html" class="quick-action">
+                    <span class="quick-icon">📝</span>
+                    <div>
+                        <div class="quick-title">مراجعة البلاغات</div>
+                        <div class="quick-desc">بلاغات الأخطاء من الزوار</div>
+                    </div>
+                </a>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+async function loadDashboard() {
+    try {
+        const r = await fetch('/api/stats');
+        if (r.status === 401) { window.location.href = '/login.html'; return; }
+        const stats = await r.json();
+        document.getElementById('totalGraves').textContent = stats.total_graves || 0;
+        const male = (stats.by_gender || []).find(g => g.gender === 'ذكر');
+        const female = (stats.by_gender || []).find(g => g.gender === 'انثى');
+        document.getElementById('totalMen').textContent = male ? male.c : 0;
+        document.getElementById('totalWomen').textContent = female ? female.c : 0;
+        const totalActiveUsers = (stats.users || []).reduce((a, b) => a + b.c, 0);
+        document.getElementById('totalUsers').textContent = totalActiveUsers;
+        document.getElementById('pendingReports').textContent = stats.pending_error_reports || 0;
+    } catch (e) {}
+
+    try {
+        const r = await fetch('/api/visit');
+        const d = await r.json();
+        if (d?.count !== undefined) document.getElementById('visitorCount').textContent = d.count;
+    } catch (e) {}
+}
+loadDashboard();
+</script>
+
+</body>
+</html>

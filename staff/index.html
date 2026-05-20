@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E4D3F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>المتطوعون - مقبرة صفوى</title>
+<link rel="manifest" href="/staff/manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#0E4D3F;--primary-dark:#08362C;--gold:#B8860B;--gold-light:#D4A93A;--cream:#FAF6EE;--cream-dark:#F0E9D8;--text-dark:#1F2937;--text-medium:#4B5563;--white:#FFFFFF;--red:#DC2626;--green:#10B981;--blue:#3B82F6}
+body{font-family:'Tajawal',sans-serif;background:#F3F4F6;color:var(--text-dark);min-height:100vh;line-height:1.6}
+
+.staff-header{background:linear-gradient(180deg,var(--primary) 0%,var(--primary-dark) 100%);color:var(--white);padding:20px 16px;position:sticky;top:0;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.staff-header-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.staff-title{font-family:'Reem Kufi',sans-serif;font-size:1.2rem;font-weight:700}
+.user-info{font-size:0.85rem;opacity:0.9}
+.user-info .role-badge{background:rgba(184,134,11,0.2);padding:2px 8px;border-radius:10px;margin-right:6px;font-size:0.75rem}
+.logout-link{background:none;border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:6px;font-family:'Tajawal',sans-serif;cursor:pointer;font-size:0.85rem}
+
+.container{max-width:600px;margin:0 auto;padding:16px}
+
+.welcome-card{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--white);padding:20px;border-radius:14px;margin-bottom:16px;text-align:center}
+.welcome-card h2{font-family:'Reem Kufi';font-size:1.3rem;margin-bottom:6px}
+.welcome-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+.welcome-stat{background:rgba(255,255,255,0.15);padding:10px;border-radius:8px;backdrop-filter:blur(10px)}
+.welcome-stat-value{font-family:'Reem Kufi';font-size:1.5rem;font-weight:700}
+.welcome-stat-label{font-size:0.8rem;opacity:0.9}
+
+.action-tile{background:var(--white);border-radius:14px;padding:24px;margin-bottom:14px;display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--text-dark);box-shadow:0 1px 3px rgba(0,0,0,0.06);transition:all 0.2s;border:2px solid transparent}
+.action-tile:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 15px rgba(0,0,0,0.08)}
+.action-icon{width:60px;height:60px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0}
+.action-content{flex:1}
+.action-title{font-family:'Reem Kufi';font-size:1.1rem;color:var(--primary);font-weight:700;margin-bottom:3px}
+.action-desc{font-size:0.85rem;color:var(--text-medium)}
+
+.section-title{font-family:'Reem Kufi';color:var(--primary);font-size:1.1rem;margin:20px 0 10px;padding:0 4px}
+
+.recent-list{background:var(--white);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.recent-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--cream-dark)}
+.recent-item:last-child{border-bottom:none}
+.recent-avatar{width:40px;height:40px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.recent-info{flex:1;min-width:0}
+.recent-name{font-weight:600;color:var(--text-dark);font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-meta{font-size:0.75rem;color:var(--text-medium)}
+.empty-state{padding:30px;text-align:center;color:var(--text-medium)}
+.export-btn{flex:1;min-width:130px;background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:600;font-size:0.9rem}
+.export-btn:hover{background:var(--primary-dark)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text-dark);color:white;padding:12px 20px;border-radius:8px;z-index:2000;opacity:0;pointer-events:none;transition:opacity 0.25s;font-size:0.9rem}
+.toast.show{opacity:1}
+.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+
+<header class="staff-header">
+    <div class="staff-header-top">
+        <div>
+            <div class="staff-title">🕌 موقع مقبرة صفوى</div>
+            <div class="user-info" id="userInfo">جاري التحميل...</div>
+        </div>
+        <button class="logout-link" onclick="logout()">🚪 خروج</button>
+    </div>
+</header>
+
+<div class="container">
+    <div class="welcome-card">
+        <h2 id="greeting">مرحباً بك</h2>
+        <p style="font-size:0.9rem;opacity:0.95">شكراً لمساعدتك في توثيق قبور أهل صفوى</p>
+        <div class="welcome-stats">
+            <div class="welcome-stat">
+                <div class="welcome-stat-value" id="myAdditions">—</div>
+                <div class="welcome-stat-label">إضافاتي</div>
+            </div>
+            <div class="welcome-stat">
+                <div class="welcome-stat-value" id="totalGraves">—</div>
+                <div class="welcome-stat-label">إجمالي القبور</div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/staff/add.html" class="action-tile">
+        <div class="action-icon">➕</div>
+        <div class="action-content">
+            <div class="action-title">إضافة قبر جديد</div>
+            <div class="action-desc">صوّر شاهد القبر + GPS + بيانات</div>
+        </div>
+    </a>
+
+    <a href="/staff/search.html" class="action-tile">
+        <div class="action-icon">🔍</div>
+        <div class="action-content">
+            <div class="action-title">البحث والتعديل</div>
+            <div class="action-desc">ابحث في القبور وعدّل عليها</div>
+        </div>
+    </a>
+
+    <div id="exportSection" style="display:none">
+        <div class="section-title">📥 تصدير البيانات</div>
+        <div class="action-tile" style="cursor:default;flex-direction:column;align-items:stretch;gap:10px">
+            <div style="font-size:0.85rem;color:var(--text-medium);text-align:center">حمّل نسخة احتياطية احترافية من بيانات القبور</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="export-btn" onclick="exportCSV()">📊 تصدير CSV</button>
+                <button class="export-btn" onclick="exportJSON()">📂 تصدير JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">📋 آخر إضافاتي</div>
+    <div class="recent-list" id="recentList">
+        <div class="empty-state">جاري التحميل...</div>
+    </div>
+</div>
+
+<script>
+let myId = null;
+
+async function init() {
+    try {
+        const r = await fetch('/api/auth/me');
+        if (r.status === 401) { window.location.href = '/login.html'; return; }
+        const d = await r.json();
+        if (!d.authenticated) { window.location.href = '/login.html'; return; }
+        myId = d.user.id;
+        const roleLabels = { admin: 'مدير', staff: 'موظف', volunteer: 'متطوع' };
+        document.getElementById('userInfo').innerHTML = `<span class="role-badge">${roleLabels[d.user.role]}</span>${d.user.full_name || d.user.username}`;
+        document.getElementById('greeting').textContent = `مرحباً ${d.user.full_name || d.user.username}`;
+        if (d.user.role === 'admin' || d.user.role === 'staff') {
+            document.getElementById('exportSection').style.display = 'block';
+        }
+        loadStats();
+        loadRecent();
+    } catch (e) {
+        window.location.href = '/login.html';
+    }
+}
+
+async function loadStats() {
+    try {
+        const r = await fetch('/api/stats');
+        const s = await r.json();
+        document.getElementById('myAdditions').textContent = s.my_additions || 0;
+        document.getElementById('totalGraves').textContent = s.total_graves || 0;
+    } catch (e) {}
+}
+
+async function loadRecent() {
+    try {
+        const r = await fetch('/api/my-graves');
+        const data = await r.json();
+        const list = document.getElementById('recentList');
+        const items = (data.results || []).slice(0, 10);
+        if (items.length === 0) {
+            list.innerHTML = '<div class="empty-state">لم تضف أي قبر بعد<br><small>اضغط "إضافة قبر جديد" للبدء</small></div>';
+            return;
+        }
+        list.innerHTML = items.map(g => `
+            <div class="recent-item">
+                <div class="recent-avatar">👤</div>
+                <div class="recent-info">
+                    <div class="recent-name">${escapeHtml(g.name)}</div>
+                    <div class="recent-meta">${escapeHtml(g.section || '-')} | ${g.row_number || '-'}-${g.grave_number || '-'} | ${new Date(g.created_at).toLocaleDateString('ar-EG')}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        document.getElementById('recentList').innerHTML = '<div class="empty-state">❌ خطأ في التحميل</div>';
+    }
+}
+
+async function logout() {
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+    window.location.href = '/login.html';
+}
+
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showToast(message, isError = false) {
+    let toast = document.getElementById('toastEl');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastEl';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.toggle('error', isError);
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+async function exportCSV() {
+    try {
+        const r = await fetch('/api/graves');
+        const data = await r.json();
+        const rows = data.results || [];
+        if (rows.length === 0) { showToast('لا توجد بيانات', true); return; }
+        const headers = Object.keys(rows[0]);
+        const csv = [headers.join(',')];
+        for (const row of rows) {
+            csv.push(headers.map(h => {
+                const v = row[h];
+                if (v === null || v === undefined) return '';
+                const s = String(v).replace(/"/g, '""');
+                return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+            }).join(','));
+        }
+        const blob = new Blob(['﻿' + csv.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `safwa-cemetery-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('✅ تم التصدير');
+    } catch (e) { showToast('❌ خطأ في التصدير', true); }
+}
+
+async function exportJSON() {
+    try {
+        const r = await fetch('/api/graves');
+        const data = await r.json();
+        const rows = data.results || [];
+        if (rows.length === 0) { showToast('لا توجد بيانات', true); return; }
+        const json = JSON.stringify(rows, null, 2);
+        const blob = new Blob(['﻿' + json], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `safwa-cemetery-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('✅ تم التصدير');
+    } catch (e) { showToast('❌ خطأ في التصدير', true); }
+}
+
+init();
+</script>
+</body>
+</html>

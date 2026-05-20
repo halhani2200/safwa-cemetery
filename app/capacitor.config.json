@@ -1,0 +1,55 @@
+{
+  "appId": "com.safwacemetery.app",
+  "appName": "مقبرة صفوى",
+  "webDir": "www",
+  "server": {
+    "url": "https://safwa-cemetery.com",
+    "cleartext": false,
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "allowNavigation": [
+      "safwa-cemetery.com",
+      "*.safwa-cemetery.com",
+      "*.r2.dev",
+      "*.cloudflare.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "cdn.jsdelivr.net",
+      "unpkg.com",
+      "mt0.google.com",
+      "mt1.google.com",
+      "mt2.google.com",
+      "mt3.google.com"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false,
+    "backgroundColor": "#0E4D3F"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "scrollEnabled": true,
+    "backgroundColor": "#0E4D3F"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#0E4D3F",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0E4D3F"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

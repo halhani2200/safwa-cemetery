@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>تعديل قبر - مقبرة صفوى</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#0E4D3F;--primary-dark:#08362C;--gold:#B8860B;--cream:#FAF6EE;--cream-dark:#F0E9D8;--text-dark:#1F2937;--text-medium:#4B5563;--white:#FFFFFF;--red:#DC2626}
+body{font-family:'Tajawal',sans-serif;background:#F3F4F6;color:var(--text-dark);min-height:100vh}
+.staff-header{background:linear-gradient(180deg,var(--primary) 0%,var(--primary-dark) 100%);color:white;padding:14px 16px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:10}
+.back-btn{background:rgba(255,255,255,0.1);border:none;color:white;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif}
+.staff-title{font-family:'Reem Kufi',sans-serif;flex:1}
+.container{max-width:600px;margin:0 auto;padding:16px}
+.section{background:white;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.section-title{font-family:'Reem Kufi';color:var(--primary);font-size:1rem;margin-bottom:12px;font-weight:700}
+.form-group{margin-bottom:12px}
+.form-label{display:block;color:var(--text-medium);font-size:0.85rem;margin-bottom:4px;font-weight:500}
+.form-input,.form-select,.form-textarea{width:100%;padding:11px 12px;border:1.5px solid var(--cream-dark);border-radius:8px;font-family:'Tajawal',sans-serif;font-size:0.95rem}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--gold)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.save-section{display:flex;gap:10px;margin-top:14px}
+.btn-save{flex:1;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;padding:14px;border-radius:10px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:1rem;cursor:pointer}
+.btn-cancel{padding:14px 22px;border-radius:10px;background:var(--cream);color:var(--text-dark);border:none;font-family:'Tajawal',sans-serif;cursor:pointer}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--primary);color:white;padding:12px 24px;border-radius:8px;z-index:1500;opacity:0;transition:opacity 0.3s;max-width:90%}
+.toast.show{opacity:1}
+.toast.error{background:var(--red)}
+.loading{padding:30px;text-align:center;color:var(--text-medium)}
+.audit-info{background:var(--cream);padding:10px;border-radius:8px;font-size:0.85rem;color:var(--text-medium);margin-bottom:14px}
+</style>
+</head>
+<body>
+<header class="staff-header">
+    <button class="back-btn" onclick="window.location.href='/staff/search.html'">←</button>
+    <div class="staff-title">✏️ تعديل قبر</div>
+</header>
+
+<div class="container" id="container">
+    <div class="loading">جاري التحميل...</div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const graveId = params.get('id');
+let grave = null;
+
+async function init() {
+    if (!graveId) { window.location.href = '/staff/search.html'; return; }
+    try {
+        const auth = await fetch('/api/auth/me');
+        if (auth.status === 401) { window.location.href = '/login.html'; return; }
+
+        const r = await fetch('/api/grave/' + graveId);
+        if (!r.ok) throw new Error('not found');
+        grave = await r.json();
+        render();
+    } catch (e) {
+        document.getElementById('container').innerHTML = '<div class="loading">❌ لم يتم العثور على القبر</div>';
+    }
+}
+
+function render() {
+    document.getElementById('container').innerHTML = `
+        ${grave.created_at ? `<div class="audit-info">📅 أضيف في: ${new Date(grave.created_at).toLocaleDateString('ar-EG')}${grave.updated_at ? ` • آخر تعديل: ${new Date(grave.updated_at).toLocaleDateString('ar-EG')}` : ''}</div>` : ''}
+
+        <div class="section">
+            <div class="section-title">📝 بيانات المتوفى</div>
+            <div class="form-group">
+                <label class="form-label">الاسم الكامل *</label>
+                <input type="text" class="form-input" id="name" value="${esc(grave.name)}">
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label class="form-label">الجنس</label>
+                    <select class="form-select" id="gender">
+                        <option value="">-- اختر --</option>
+                        <option value="ذكر" ${grave.gender === 'ذكر' ? 'selected' : ''}>ذكر</option>
+                        <option value="انثى" ${grave.gender === 'انثى' ? 'selected' : ''}>أنثى</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">العمر</label>
+                    <input type="number" class="form-input" id="age" value="${grave.age || ''}">
+                </div>
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label class="form-label">يوم الوفاة</label>
+                    <select class="form-select" id="death_day">
+                        <option value="">-- --</option>
+                        ${['السبت','الاحد','الاثنين','الثلاثاء','الاربعاء','الخميس','الجمعة'].map(d => `<option ${grave.death_day === d ? 'selected' : ''}>${d}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">التاريخ الميلادي</label>
+                    <input type="text" class="form-input" id="death_date_gregorian" value="${esc(grave.death_date_gregorian || '')}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">التاريخ الهجري</label>
+                <input type="text" class="form-input" id="death_date_hijri" value="${esc(grave.death_date_hijri || '')}">
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">🏷️ الموقع</div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label class="form-label">المنطقة</label>
+                    <input type="text" class="form-input" id="section_field" value="${esc(grave.section || 'أ')}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الصف</label>
+                    <input type="number" class="form-input" id="row_number" value="${grave.row_number || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">القبر</label>
+                    <input type="number" class="form-input" id="grave_number" value="${grave.grave_number || ''}">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📓 ملاحظات</div>
+            <div class="form-group">
+                <textarea class="form-textarea" id="notes" rows="3">${esc(grave.notes || '')}</textarea>
+            </div>
+        </div>
+
+        <div class="save-section">
+            <button class="btn-cancel" onclick="window.location.href='/staff/search.html'">إلغاء</button>
+            <button class="btn-save" onclick="save()">💾 حفظ التغييرات</button>
+        </div>
+    `;
+}
+
+async function save() {
+    const body = {
+        name: document.getElementById('name').value.trim(),
+        gender: document.getElementById('gender').value || null,
+        age: document.getElementById('age').value ? parseInt(document.getElementById('age').value) : null,
+        death_day: document.getElementById('death_day').value || null,
+        death_date_gregorian: document.getElementById('death_date_gregorian').value.trim() || null,
+        death_date_hijri: document.getElementById('death_date_hijri').value.trim() || null,
+        section: document.getElementById('section_field').value.trim() || 'أ',
+        row_number: document.getElementById('row_number').value ? parseInt(document.getElementById('row_number').value) : null,
+        grave_number: document.getElementById('grave_number').value ? parseInt(document.getElementById('grave_number').value) : null,
+        notes: document.getElementById('notes').value.trim() || null,
+        latitude: grave.latitude,
+        longitude: grave.longitude,
+        grave_reference: grave.grave_reference
+    };
+    if (!body.name) { toast('الاسم مطلوب', true); return; }
+
+    try {
+        const r = await fetch('/api/grave/' + graveId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await r.json();
+        if (data.ok) {
+            toast('✅ تم الحفظ');
+            setTimeout(() => window.location.href = '/staff/search.html', 1000);
+        } else {
+            toast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) { toast('❌ خطأ', true); }
+}
+
+function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toast(msg, isErr = false) {
+    let t = document.getElementById('toastEl');
+    if (!t) { t = document.createElement('div'); t.id='toastEl'; t.className='toast'; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.toggle('error', isErr);
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+init();
+</script>
+</body>
+</html>

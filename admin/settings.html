@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>الإعدادات - مقبرة صفوى</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🕌</div>
+            <div><div class="sidebar-title">مقبرة صفوى</div><div class="sidebar-subtitle" id="userBadge">...</div></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/" class="nav-link"><span>📊</span><span>الرئيسية</span></a>
+            <a href="/admin/graves.html" class="nav-link"><span>🪦</span><span>إدارة القبور</span></a>
+            <a href="/staff/add.html" class="nav-link"><span>➕</span><span>إضافة قبر</span></a>
+            <a href="/map.html" class="nav-link" target="_blank"><span>🗺️</span><span>خريطة المقبرة</span></a>
+            <a href="/admin/announcements.html" class="nav-link"><span>⚰️</span><span>إعلانات الوفاة</span></a>
+            <a href="/admin/users.html" class="nav-link"><span>👥</span><span>المستخدمون</span></a>
+            <a href="/admin/audit.html" class="nav-link"><span>📋</span><span>سجل النشاط</span></a>
+            <a href="/admin/reports.html" class="nav-link"><span>📝</span><span>بلاغات الأخطاء</span></a>
+            <a href="/admin/settings.html" class="nav-link active"><span>⚙️</span><span>الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/" class="nav-link"><span>🌐</span><span>عرض الموقع</span></a>
+            <button onclick="logout()" class="nav-link logout-btn"><span>🚪</span><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>⚙️ الإعدادات</h1>
+            <p>إعدادات النظام والمفاتيح السرّية</p>
+        </div>
+
+        <div class="card">
+            <h2>🔑 مفاتيح API (سرّية)</h2>
+            <p style="color:var(--text-medium);margin-bottom:14px;font-size:0.9rem">المفاتيح السرّية تُحفظ كـ <strong>Cloudflare Secrets</strong> (مشفّرة في السيرفر، لا تظهر في الواجهة بعد الحفظ).</p>
+
+            <div class="form-group">
+                <label class="form-label">Claude API Key</label>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <div id="claudeStatus" class="badge badge-inactive">جاري التحقق...</div>
+                    <small style="color:var(--text-medium)">يستخدم لقراءة شواهد القبور بالـ AI</small>
+                </div>
+                <p style="margin-top:8px;background:var(--cream);padding:10px;border-radius:6px;font-size:0.85rem">
+                    💡 لإضافة/تغيير المفتاح، استخدم Wrangler CLI:<br>
+                    <code style="background:#1F2937;color:#10B981;padding:4px 8px;border-radius:4px;display:inline-block;margin-top:6px">npx wrangler secret put CLAUDE_API_KEY</code>
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Telegram Bot Token</label>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <div id="telegramStatus" class="badge badge-inactive">جاري التحقق...</div>
+                    <small style="color:var(--text-medium)">لربط قروب القطيف اليوم للإعلانات</small>
+                </div>
+                <p style="margin-top:8px;background:var(--cream);padding:10px;border-radius:6px;font-size:0.85rem">
+                    <code style="background:#1F2937;color:#10B981;padding:4px 8px;border-radius:4px;display:inline-block">npx wrangler secret put TELEGRAM_BOT_TOKEN</code>
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🌐 الإعدادات العامة</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">اسم الموقع</label>
+                    <input type="text" class="form-input" id="site_name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">قناة التلجرام للإعلانات</label>
+                    <input type="text" class="form-input" id="telegram_channel" placeholder="@ALQHAT0558511232">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+        </div>
+
+        <div class="card">
+            <h2>📍 إحداثيات المقبرة</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">خط العرض (Latitude)</label>
+                    <input type="text" class="form-input" id="cemetery_lat">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">خط الطول (Longitude)</label>
+                    <input type="text" class="form-input" id="cemetery_lng">
+                </div>
+            </div>
+            <p style="color:var(--text-medium);font-size:0.85rem">📌 الإحداثيات الحالية هي للقبر رقم 1 (نقطة مرجع المعايرة)</p>
+        </div>
+
+        <div class="card">
+            <h2>🔒 تغيير كلمة المرور</h2>
+            <div class="form-group">
+                <label class="form-label">كلمة المرور الحالية</label>
+                <input type="password" class="form-input" id="current_password" autocomplete="current-password">
+            </div>
+            <div class="form-group">
+                <label class="form-label">كلمة المرور الجديدة</label>
+                <input type="password" class="form-input" id="new_password" autocomplete="new-password">
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()">🔐 تغيير كلمة المرور</button>
+        </div>
+
+        <div class="card">
+            <h2>🎨 محتوى الموقع</h2>
+            <p style="color:var(--text-medium);margin-bottom:14px;font-size:0.9rem">
+                النصوص التي تظهر للزوار في الصفحة الرئيسية. أي تغيير يظهر للزوار خلال دقيقة.
+            </p>
+
+            <div class="form-group">
+                <label class="form-label">📜 الشريط العلوي المتحرّك (آية واحدة في كل سطر)</label>
+                <textarea class="form-textarea" id="top_banner_items" rows="8" placeholder="﴿ كل من عليها فان ﴾&#10;﴿ كل نفس ذائقة الموت ﴾&#10;..."></textarea>
+                <small style="color:var(--text-medium)">الشريط يتحرّك تلقائياً من اليمين لليسار ويعرض كل الآيات بالتتابع.</small>
+            </div>
+
+            <hr style="margin:18px 0;border:none;border-top:1px solid var(--cream-dark)">
+
+            <h3 style="color:var(--primary);font-family:'Reem Kufi';margin-bottom:10px">🤲 دعاء أهل القبور (أسفل الصفحة)</h3>
+            <div class="form-group">
+                <label class="form-label">عنوان الدعاء</label>
+                <input type="text" class="form-input" id="duaa_title" placeholder="دعاء أهل القبور">
+            </div>
+            <div class="form-group">
+                <label class="form-label">نص الدعاء</label>
+                <textarea class="form-textarea" id="duaa_text" rows="8" placeholder="اَلسَّلامُ عَلَى أَهْلِ لَا إِلَهَ إِلَّا اللهُ ..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">مصدر الدعاء (اختياري)</label>
+                <input type="text" class="form-input" id="duaa_source" placeholder="-- من أدعية الأئمة عليهم السلام">
+            </div>
+
+            <hr style="margin:18px 0;border:none;border-top:1px solid var(--cream-dark)">
+
+            <h3 style="color:var(--primary);font-family:'Reem Kufi';margin-bottom:10px">📢 إعلان هام (يظهر بشكل بارز)</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="notice_enabled" style="margin-left:6px">
+                        تفعيل الإعلان الهام
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">نوع الإعلان</label>
+                    <select class="form-select" id="notice_type">
+                        <option value="info">ℹ️ معلومة (أزرق)</option>
+                        <option value="warning">⚠️ تنبيه (أصفر)</option>
+                        <option value="success">✅ خير (أخضر)</option>
+                        <option value="urgent">🚨 عاجل (أحمر)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">نص الإعلان</label>
+                <textarea class="form-textarea" id="notice_text" rows="3" placeholder="مثال: المقبرة مغلقة يوم الجمعة لأعمال الصيانة"></textarea>
+            </div>
+
+            <hr style="margin:18px 0;border:none;border-top:1px solid var(--cream-dark)">
+
+            <div class="form-group">
+                <label class="form-label">📝 ملاحظة في التذييل (اختياري)</label>
+                <input type="text" class="form-input" id="footer_note" placeholder="موقع خدمي مجتمعي لأهالي صفوى">
+            </div>
+
+            <button class="btn btn-primary" onclick="saveContent()">💾 حفظ التعديلات</button>
+        </div>
+
+        <div class="card">
+            <h2>🗺️ إدارة المناطق</h2>
+            <p style="color:var(--text-medium);margin-bottom:14px;font-size:0.9rem">
+                كل منطقة تُحدَّد بـ 4 إحداثيات (الزوايا الأربعة) + عدد الصفوف والأعمدة، عشان نقدر نحسب موقع أي قبر فيها تلقائياً.
+            </p>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+                <span id="sectionsCount" style="font-size:0.9rem;color:var(--text-medium)">جاري التحميل...</span>
+                <button class="btn btn-primary" onclick="openSectionModal()">➕ إضافة منطقة جديدة</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الرمز</th>
+                            <th>الاسم</th>
+                            <th>الصفوف × الأعمدة</th>
+                            <th>الإحداثيات</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sectionsTableBody">
+                        <tr><td colspan="5" class="loading">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📥 تصدير البيانات</h2>
+            <p style="color:var(--text-medium);margin-bottom:14px">حمّل نسخة احتياطية من البيانات.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-gold" onclick="exportCSV()">📊 تصدير CSV</button>
+                <button class="btn btn-secondary" onclick="exportJSON()">📂 تصدير JSON</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Section Add/Edit Modal -->
+<div class="modal-overlay" id="sectionModal">
+    <div class="modal" style="max-width:700px">
+        <div class="modal-header">
+            <h3 id="sectionModalTitle">➕ إضافة منطقة جديدة</h3>
+            <button class="modal-close" onclick="closeSectionModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="section_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">رمز المنطقة *</label>
+                    <input type="text" class="form-input" id="section_code" placeholder="مثلاً: أ أو ب">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">اسم المنطقة *</label>
+                    <input type="text" class="form-input" id="section_name" placeholder="المنطقة أ">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">عدد الصفوف</label>
+                    <input type="number" class="form-input" id="section_rows" value="11" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">عدد الأعمدة</label>
+                    <input type="number" class="form-input" id="section_cols" value="17" min="1">
+                </div>
+            </div>
+
+            <h4 style="margin:18px 0 8px;color:var(--primary);font-family:'Reem Kufi'">📍 الزوايا الأربعة (للمعايرة)</h4>
+            <p style="font-size:0.85rem;color:var(--text-medium);margin-bottom:10px">
+                إحداثيات GPS لكل زاوية. خذها من Google Maps (شارك الموقع → انسخ الإحداثيات).
+            </p>
+
+            <div style="background:var(--cream);padding:12px;border-radius:8px;margin-bottom:10px">
+                <strong style="display:block;margin-bottom:8px">🔴 الزاوية الشمالية الغربية (صف 1، قبر 1)</strong>
+                <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <input type="number" step="any" class="form-input" id="nw_lat" placeholder="Latitude">
+                    <input type="number" step="any" class="form-input" id="nw_lng" placeholder="Longitude">
+                </div>
+            </div>
+
+            <div style="background:var(--cream);padding:12px;border-radius:8px;margin-bottom:10px">
+                <strong style="display:block;margin-bottom:8px">🔴 الزاوية الشمالية الشرقية (صف 1، آخر قبر)</strong>
+                <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <input type="number" step="any" class="form-input" id="ne_lat" placeholder="Latitude">
+                    <input type="number" step="any" class="form-input" id="ne_lng" placeholder="Longitude">
+                </div>
+            </div>
+
+            <div style="background:var(--cream);padding:12px;border-radius:8px;margin-bottom:10px">
+                <strong style="display:block;margin-bottom:8px">🔴 الزاوية الجنوبية الغربية (آخر صف، قبر 1)</strong>
+                <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <input type="number" step="any" class="form-input" id="sw_lat" placeholder="Latitude">
+                    <input type="number" step="any" class="form-input" id="sw_lng" placeholder="Longitude">
+                </div>
+            </div>
+
+            <div style="background:var(--cream);padding:12px;border-radius:8px;margin-bottom:10px">
+                <strong style="display:block;margin-bottom:8px">🔴 الزاوية الجنوبية الشرقية (آخر صف، آخر قبر)</strong>
+                <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <input type="number" step="any" class="form-input" id="se_lat" placeholder="Latitude">
+                    <input type="number" step="any" class="form-input" id="se_lng" placeholder="Longitude">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">ملاحظات (اختياري)</label>
+                <textarea class="form-textarea" id="section_notes" rows="2"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeSectionModal()">إلغاء</button>
+            <button type="button" class="btn btn-primary" onclick="saveSection()">💾 حفظ</button>
+        </div>
+    </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+async function loadSettings() {
+    try {
+        const r = await fetch('/api/settings');
+        const settings = await r.json();
+        document.getElementById('site_name').value = settings.site_name?.value || 'مقبرة صفوى';
+        document.getElementById('telegram_channel').value = settings.telegram_channel?.value || '';
+        document.getElementById('cemetery_lat').value = settings.cemetery_lat?.value || '26.649576';
+        document.getElementById('cemetery_lng').value = settings.cemetery_lng?.value || '49.958884';
+
+        // Content settings
+        document.getElementById('top_banner_items').value = settings.top_banner_items?.value || '';
+        document.getElementById('duaa_title').value = settings.duaa_title?.value || 'دعاء أهل القبور';
+        document.getElementById('duaa_text').value = settings.duaa_text?.value || '';
+        document.getElementById('duaa_source').value = settings.duaa_source?.value || '';
+        document.getElementById('notice_enabled').checked = (settings.notice_enabled?.value || '') === '1';
+        document.getElementById('notice_type').value = settings.notice_type?.value || 'info';
+        document.getElementById('notice_text').value = settings.notice_text?.value || '';
+        document.getElementById('footer_note').value = settings.footer_note?.value || '';
+
+        const claude = document.getElementById('claudeStatus');
+        if (settings.claude_api_configured) {
+            claude.className = 'badge badge-active';
+            claude.textContent = '✅ مُعدّ ومفعّل';
+        } else {
+            claude.className = 'badge badge-pending';
+            claude.textContent = '⚠️ لم يُعدّ بعد';
+        }
+
+        const tg = document.getElementById('telegramStatus');
+        if (settings.telegram_configured) {
+            tg.className = 'badge badge-active';
+            tg.textContent = '✅ مُعدّ ومفعّل';
+        } else {
+            tg.className = 'badge badge-pending';
+            tg.textContent = '⚠️ لم يُعدّ بعد';
+        }
+    } catch (e) { showToast('خطأ في التحميل', true); }
+}
+
+async function saveSettings() {
+    try {
+        const r = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                site_name: document.getElementById('site_name').value.trim(),
+                telegram_channel: document.getElementById('telegram_channel').value.trim(),
+                cemetery_lat: document.getElementById('cemetery_lat').value.trim(),
+                cemetery_lng: document.getElementById('cemetery_lng').value.trim()
+            })
+        });
+        const data = await r.json();
+        if (data.ok) showToast('✅ تم الحفظ');
+        else showToast('❌ ' + (data.error || 'فشل'), true);
+    } catch (e) { showToast('❌ خطأ', true); }
+}
+
+async function saveContent() {
+    try {
+        const r = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                top_banner_items: document.getElementById('top_banner_items').value,
+                duaa_title: document.getElementById('duaa_title').value.trim(),
+                duaa_text: document.getElementById('duaa_text').value,
+                duaa_source: document.getElementById('duaa_source').value.trim(),
+                notice_enabled: document.getElementById('notice_enabled').checked ? '1' : '0',
+                notice_type: document.getElementById('notice_type').value,
+                notice_text: document.getElementById('notice_text').value,
+                footer_note: document.getElementById('footer_note').value.trim()
+            })
+        });
+        const data = await r.json();
+        if (data.ok) showToast('✅ تم حفظ المحتوى — سيظهر للزوار خلال دقيقة');
+        else showToast('❌ ' + (data.error || 'فشل'), true);
+    } catch (e) { showToast('❌ خطأ', true); }
+}
+
+async function changePassword() {
+    const current = document.getElementById('current_password').value;
+    const newPass = document.getElementById('new_password').value;
+    if (!current || !newPass) { showToast('املأ الحقلين', true); return; }
+    if (newPass.length < 6) { showToast('كلمة المرور قصيرة (6 أحرف على الأقل)', true); return; }
+    try {
+        const r = await fetch('/api/me/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ current_password: current, new_password: newPass })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            showToast('✅ تم تغيير كلمة المرور');
+            document.getElementById('current_password').value = '';
+            document.getElementById('new_password').value = '';
+        } else {
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) { showToast('❌ خطأ', true); }
+}
+
+async function exportJSON() {
+    try {
+        const r = await fetch('/api/graves');
+        const data = await r.json();
+        const json = JSON.stringify(data.results, null, 2);
+        const blob = new Blob(['﻿' + json], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `safwa-cemetery-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('✅ تم التصدير');
+    } catch (e) { showToast('❌ خطأ', true); }
+}
+
+async function exportCSV() {
+    try {
+        const r = await fetch('/api/graves');
+        const data = await r.json();
+        const rows = data.results || [];
+        if (rows.length === 0) { showToast('لا توجد بيانات', true); return; }
+        const headers = ['id','name','gender','age','death_day','death_date_hijri','death_date_gregorian','section','row_number','grave_number','grave_reference','latitude','longitude','receiver_name','receiver_relationship','receiver_phone'];
+        const csv = [headers.join(',')];
+        for (const r of rows) {
+            csv.push(headers.map(h => {
+                const v = r[h];
+                if (v === null || v === undefined) return '';
+                const s = String(v).replace(/"/g, '""');
+                return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+            }).join(','));
+        }
+        const blob = new Blob(['﻿' + csv.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `safwa-cemetery-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('✅ تم التصدير');
+    } catch (e) { showToast('❌ خطأ', true); }
+}
+
+// ============================================
+//  Sections Management
+// ============================================
+let allSections = [];
+
+async function loadSections() {
+    try {
+        const r = await fetch('/api/sections');
+        const data = await r.json();
+        allSections = data.results || [];
+        document.getElementById('sectionsCount').textContent = `إجمالي ${allSections.length} منطقة`;
+        renderSections();
+    } catch (e) {
+        document.getElementById('sectionsTableBody').innerHTML = '<tr><td colspan="5" class="empty">❌ خطأ في التحميل</td></tr>';
+    }
+}
+
+function renderSections() {
+    const body = document.getElementById('sectionsTableBody');
+    if (allSections.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" class="empty"><div class="empty-icon">📭</div>لا توجد مناطق مسجلة</td></tr>';
+        return;
+    }
+    body.innerHTML = allSections.map(s => {
+        const hasCoords = s.nw_lat && s.ne_lat && s.sw_lat && s.se_lat;
+        return `
+        <tr>
+            <td><strong style="font-size:1.1rem">${escapeHtml(s.code)}</strong></td>
+            <td>${escapeHtml(s.name)}</td>
+            <td>${s.rows_count} × ${s.cols_count} = <strong>${s.rows_count * s.cols_count}</strong> قبر</td>
+            <td>${hasCoords ? '<span class="badge badge-active">✅ معايرة كاملة</span>' : '<span class="badge badge-pending">⚠️ ناقصة</span>'}</td>
+            <td style="white-space:nowrap">
+                <button class="action-btn action-btn-edit" onclick="editSection(${s.id})">✏️ تعديل</button>
+                <button class="action-btn action-btn-delete" onclick="deleteSection(${s.id}, '${escapeHtml(s.name).replace(/'/g, "&apos;")}')">🗑️</button>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+function openSectionModal() {
+    document.getElementById('sectionModalTitle').textContent = '➕ إضافة منطقة جديدة';
+    document.getElementById('section_id').value = '';
+    document.getElementById('section_code').value = '';
+    document.getElementById('section_name').value = '';
+    document.getElementById('section_rows').value = '11';
+    document.getElementById('section_cols').value = '17';
+    ['nw_lat','nw_lng','ne_lat','ne_lng','sw_lat','sw_lng','se_lat','se_lng'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('section_notes').value = '';
+    document.getElementById('sectionModal').classList.add('show');
+}
+
+function editSection(id) {
+    const s = allSections.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('sectionModalTitle').textContent = '✏️ تعديل منطقة';
+    document.getElementById('section_id').value = s.id;
+    document.getElementById('section_code').value = s.code || '';
+    document.getElementById('section_name').value = s.name || '';
+    document.getElementById('section_rows').value = s.rows_count || 11;
+    document.getElementById('section_cols').value = s.cols_count || 17;
+    document.getElementById('nw_lat').value = s.nw_lat || '';
+    document.getElementById('nw_lng').value = s.nw_lng || '';
+    document.getElementById('ne_lat').value = s.ne_lat || '';
+    document.getElementById('ne_lng').value = s.ne_lng || '';
+    document.getElementById('sw_lat').value = s.sw_lat || '';
+    document.getElementById('sw_lng').value = s.sw_lng || '';
+    document.getElementById('se_lat').value = s.se_lat || '';
+    document.getElementById('se_lng').value = s.se_lng || '';
+    document.getElementById('section_notes').value = s.notes || '';
+    document.getElementById('sectionModal').classList.add('show');
+}
+
+function closeSectionModal() {
+    document.getElementById('sectionModal').classList.remove('show');
+}
+
+async function saveSection() {
+    const id = document.getElementById('section_id').value;
+    const code = document.getElementById('section_code').value.trim();
+    const name = document.getElementById('section_name').value.trim();
+    if (!code || !name) { showToast('الرمز والاسم مطلوبان', true); return; }
+
+    const parse = v => v ? parseFloat(v) : null;
+    const body = {
+        code, name,
+        rows_count: parseInt(document.getElementById('section_rows').value) || 11,
+        cols_count: parseInt(document.getElementById('section_cols').value) || 17,
+        nw_lat: parse(document.getElementById('nw_lat').value),
+        nw_lng: parse(document.getElementById('nw_lng').value),
+        ne_lat: parse(document.getElementById('ne_lat').value),
+        ne_lng: parse(document.getElementById('ne_lng').value),
+        sw_lat: parse(document.getElementById('sw_lat').value),
+        sw_lng: parse(document.getElementById('sw_lng').value),
+        se_lat: parse(document.getElementById('se_lat').value),
+        se_lng: parse(document.getElementById('se_lng').value),
+        notes: document.getElementById('section_notes').value.trim() || null
+    };
+
+    try {
+        const url = id ? `/api/section/${id}` : '/api/sections';
+        const method = id ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await r.json();
+        if (data.ok || data.id) {
+            showToast(id ? '✅ تم التعديل' : '✅ تم الإضافة');
+            closeSectionModal();
+            loadSections();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) {
+        showToast('❌ خطأ', true);
+    }
+}
+
+async function deleteSection(id, name) {
+    if (!confirmDelete(`حذف المنطقة "${name}"؟`)) return;
+    try {
+        const r = await fetch(`/api/section/${id}`, { method: 'DELETE' });
+        const data = await r.json();
+        if (data.ok) {
+            showToast('✅ تم الحذف');
+            loadSections();
+        } else {
+            showToast('❌ ' + (data.error || 'فشل'), true);
+        }
+    } catch (e) {
+        showToast('❌ خطأ', true);
+    }
+}
+
+loadSettings();
+loadSections();
+</script>
+</body>
+</html>

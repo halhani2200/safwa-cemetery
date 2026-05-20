@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>خريطة مقبرة صفوى — معاينة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#0E4D3F;--primary-dark:#08362C;--gold:#B8860B;--gold-light:#D4A93A;--cream:#FAF6EE;--text-dark:#1F2937;--text-medium:#4B5563;--white:#FFFFFF;--red:#DC2626;--blue:#3B82F6}
+body{font-family:'Tajawal',sans-serif;background:#1F2937;color:white;height:100vh;overflow:hidden}
+
+.app-bar{position:fixed;top:0;left:0;right:0;height:60px;background:linear-gradient(180deg,var(--primary) 0%,var(--primary-dark) 100%);display:flex;align-items:center;padding:0 18px;z-index:1100;box-shadow:0 2px 8px rgba(0,0,0,0.3);gap:14px}
+.app-bar-title{font-family:'Reem Kufi',sans-serif;font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.app-bar-badge{background:#7C3AED;color:white;padding:2px 8px;border-radius:6px;font-size:0.7rem}
+.app-bar-spacer{flex:1}
+.app-bar-search{position:relative}
+.app-bar-search input{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;font-family:'Tajawal',sans-serif;width:220px;font-size:0.9rem}
+.app-bar-search input::placeholder{color:rgba(255,255,255,0.55)}
+.app-bar-search input:focus{outline:none;background:rgba(255,255,255,0.2);border-color:var(--gold)}
+.app-bar-stats{display:flex;gap:14px;font-size:0.85rem;color:rgba(255,255,255,0.9)}
+.app-bar-stats b{color:var(--gold-light)}
+
+#map{position:absolute;top:60px;bottom:0;left:0;right:0}
+
+.layer-toggle{position:absolute;top:78px;right:14px;z-index:1000;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.3);overflow:hidden;font-family:'Tajawal',sans-serif;display:flex}
+.layer-toggle button{background:white;border:none;padding:8px 14px;cursor:pointer;font-family:inherit;font-weight:600;color:var(--text-dark);font-size:0.85rem;border-left:1px solid #E5E7EB}
+.layer-toggle button:first-child{border-left:none}
+.layer-toggle button.active{background:var(--primary);color:white}
+
+.legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-radius:8px;padding:12px;box-shadow:0 4px 12px rgba(0,0,0,0.25);font-family:'Tajawal',sans-serif;font-size:0.85rem;color:var(--text-dark);max-width:240px}
+.legend-title{font-weight:700;margin-bottom:8px;color:var(--primary);font-family:'Reem Kufi'}
+.legend-row{display:flex;align-items:center;gap:8px;margin:4px 0}
+.legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+
+.grave-marker{width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);cursor:pointer;transition:all 0.15s}
+.grave-marker:hover{transform:scale(1.4);z-index:1000 !important}
+.grave-marker.male{background:#3B82F6}
+.grave-marker.female{background:#EC4899}
+.grave-marker.highlighted{background:#FBBF24;width:22px;height:22px;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,0.7)}50%{box-shadow:0 0 0 12px rgba(251,191,36,0)}}
+
+.leaflet-popup-content-wrapper{border-radius:10px;font-family:'Tajawal',sans-serif;direction:rtl;text-align:right}
+.leaflet-popup-content{margin:14px 18px;min-width:220px}
+.popup-name{font-family:'Reem Kufi';font-size:1.05rem;color:var(--primary);font-weight:700;margin-bottom:6px}
+.popup-meta{color:var(--text-medium);font-size:0.85rem;margin:3px 0}
+.popup-meta strong{color:var(--text-dark)}
+.popup-link{display:inline-block;margin-top:8px;padding:6px 12px;background:var(--primary);color:white;text-decoration:none;border-radius:6px;font-size:0.85rem;font-weight:600}
+.popup-link:hover{background:var(--primary-dark)}
+
+.search-results-panel{position:absolute;top:78px;left:14px;z-index:1000;background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.25);max-width:300px;max-height:60vh;overflow-y:auto;font-family:'Tajawal',sans-serif;display:none}
+.search-results-panel.show{display:block}
+.search-result-row{padding:10px 14px;border-bottom:1px solid #E5E7EB;cursor:pointer;color:var(--text-dark);font-size:0.9rem}
+.search-result-row:hover{background:var(--cream)}
+.search-result-row strong{display:block;color:var(--primary);margin-bottom:2px}
+
+.loading-overlay{position:absolute;top:60px;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(31,41,55,0.85);z-index:1500;color:white;font-size:1.1rem}
+.loading-overlay.hidden{display:none}
+
+.mobile-toggle{display:none}
+@media (max-width:768px){
+.app-bar-search input{width:140px}
+.app-bar-stats{display:none}
+.legend{max-width:160px;font-size:0.75rem}
+}
+</style>
+</head>
+<body>
+
+<div class="app-bar">
+    <div class="app-bar-title">🗺️ خريطة مقبرة صفوى <span class="app-bar-badge">معاينة</span></div>
+    <div class="app-bar-spacer"></div>
+    <div class="app-bar-stats">
+        <span>📍 <b id="gravesCount">...</b> قبر</span>
+        <span>🗺️ المنطقة A</span>
+    </div>
+    <div class="app-bar-search">
+        <input type="text" id="searchInput" placeholder="بحث بالاسم...">
+    </div>
+</div>
+
+<div class="layer-toggle">
+    <button id="btnGoogle" class="active" onclick="setLayer('google')">🛰️ Google</button>
+    <button id="btnEsri" onclick="setLayer('esri')">🛰️ Esri</button>
+    <button id="btnStreet" onclick="setLayer('street')">🗺️ خريطة</button>
+</div>
+<div class="layer-toggle" style="top:128px;right:14px">
+    <button id="btnEdit" onclick="toggleEditMode()" style="display:none;background:#7C3AED;color:white">✏️ تحرير</button>
+</div>
+
+<div id="searchResults" class="search-results-panel"></div>
+
+<div id="map"></div>
+
+<div class="legend">
+    <div class="legend-title">دلالة الألوان</div>
+    <div class="legend-row"><span class="legend-dot" style="background:#3B82F6"></span><span>ذكر</span></div>
+    <div class="legend-row"><span class="legend-dot" style="background:#EC4899"></span><span>أنثى</span></div>
+    <div class="legend-row"><span class="legend-dot" style="background:#FBBF24"></span><span>مُحدَّد</span></div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #E5E7EB;font-size:0.75rem;color:var(--text-medium)">اضغط أي نقطة لعرض التفاصيل</div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">⏳ جاري تحميل القبور...</div>
+
+<script>
+// ============================================
+// Map setup
+// ============================================
+const CENTER = [26.649486, 49.959042]; // approximate center of Section A
+const map = L.map('map', {
+    center: CENTER,
+    zoom: 19,
+    maxZoom: 22,
+    zoomControl: false
+});
+L.control.zoom({ position: 'topleft' }).addTo(map);
+
+// Tile layers - Google has best alignment with true GPS coordinates
+const googleLayer = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    { maxZoom: 22, maxNativeZoom: 20, attribution: 'Google', crossOrigin: true, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'] }
+);
+const esriLayer = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 22, maxNativeZoom: 19, attribution: 'Esri', crossOrigin: true }
+);
+const streetLayer = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { maxZoom: 19, attribution: '© OpenStreetMap', crossOrigin: true }
+);
+
+let currentLayer = googleLayer;
+googleLayer.addTo(map);
+
+function setLayer(type) {
+    map.removeLayer(currentLayer);
+    document.querySelectorAll('.layer-toggle button').forEach(b => b.classList.remove('active'));
+    if (type === 'google') { currentLayer = googleLayer; document.getElementById('btnGoogle').classList.add('active'); }
+    else if (type === 'esri') { currentLayer = esriLayer; document.getElementById('btnEsri').classList.add('active'); }
+    else { currentLayer = streetLayer; document.getElementById('btnStreet').classList.add('active'); }
+    currentLayer.addTo(map);
+}
+
+// ============================================
+// Load and plot graves
+// ============================================
+let allGraves = [];
+let markers = {};
+let editMode = false;
+let currentUser = null;
+
+async function checkAuth() {
+    try {
+        const r = await fetch('/api/auth/me');
+        const d = await r.json();
+        if (d.authenticated && (d.user.role === 'admin' || d.user.role === 'staff')) {
+            currentUser = d.user;
+            document.getElementById('btnEdit').style.display = 'block';
+        }
+    } catch (e) {}
+}
+
+function toggleEditMode() {
+    editMode = !editMode;
+    const btn = document.getElementById('btnEdit');
+    if (editMode) {
+        btn.textContent = '✅ إيقاف التحرير';
+        btn.style.background = '#10B981';
+        Object.entries(markers).forEach(([id, m]) => m.dragging.enable());
+        showHint('🎯 وضع التحرير مُفعّل — اسحب أي نقطة لضبط موقعها (يحفظ تلقائياً)');
+    } else {
+        btn.textContent = '✏️ تحرير';
+        btn.style.background = '#7C3AED';
+        Object.entries(markers).forEach(([id, m]) => m.dragging.disable());
+        showHint('تم إيقاف وضع التحرير', 2000);
+    }
+}
+
+function showHint(text, duration = 4000) {
+    let hint = document.getElementById('mapHint');
+    if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'mapHint';
+        hint.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:white;padding:10px 20px;border-radius:8px;z-index:2000;font-family:Tajawal,sans-serif;font-size:0.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+        document.body.appendChild(hint);
+    }
+    hint.textContent = text;
+    hint.style.display = 'block';
+    clearTimeout(showHint._t);
+    showHint._t = setTimeout(() => { hint.style.display = 'none'; }, duration);
+}
+
+async function loadGraves() {
+    try {
+        const r = await fetch('/api/graves');
+        const data = await r.json();
+        allGraves = (data.results || []).filter(g => g.latitude && g.longitude);
+        document.getElementById('gravesCount').textContent = allGraves.length;
+        plotMarkers();
+        document.getElementById('loadingOverlay').classList.add('hidden');
+    } catch (e) {
+        document.getElementById('loadingOverlay').textContent = '❌ خطأ في التحميل';
+    }
+}
+
+function plotMarkers() {
+    allGraves.forEach(g => {
+        const isFemale = g.gender === 'انثى';
+        const iconCls = isFemale ? 'female' : 'male';
+        const icon = L.divIcon({
+            className: '',
+            html: `<div class="grave-marker ${iconCls}" data-id="${g.id}"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
+        });
+        const marker = L.marker([g.latitude, g.longitude], {
+            icon, title: g.name, draggable: false
+        }).addTo(map).bindPopup(buildPopupHtml(g), { maxWidth: 280 });
+
+        // Save position on drag end
+        marker.on('dragend', async (e) => {
+            const newLatLng = e.target.getLatLng();
+            const grave = allGraves.find(x => x.id === g.id);
+            if (!grave) return;
+            const oldLat = grave.latitude, oldLng = grave.longitude;
+            grave.latitude = newLatLng.lat;
+            grave.longitude = newLatLng.lng;
+            try {
+                const r = await fetch(`/api/grave/${g.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(grave)
+                });
+                const data = await r.json();
+                if (data.ok) {
+                    showHint(`✅ تم حفظ موقع ${grave.name}`, 2500);
+                    // Update popup with new coords
+                    marker.setPopupContent(buildPopupHtml(grave));
+                } else {
+                    grave.latitude = oldLat; grave.longitude = oldLng;
+                    marker.setLatLng([oldLat, oldLng]);
+                    showHint('❌ فشل الحفظ: ' + (data.error || ''), 3000);
+                }
+            } catch (err) {
+                grave.latitude = oldLat; grave.longitude = oldLng;
+                marker.setLatLng([oldLat, oldLng]);
+                showHint('❌ خطأ في الاتصال', 3000);
+            }
+        });
+
+        markers[g.id] = marker;
+    });
+}
+
+function buildPopupHtml(g) {
+    const isFemale = g.gender === 'انثى';
+    const honorific = isFemale ? 'المرحومة' : 'المرحوم';
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`;
+    return `
+        <div class="popup-name">${honorific} ${escapeHtml(g.name)}</div>
+        ${g.death_date_gregorian ? `<div class="popup-meta">🕊️ <strong>تاريخ الوفاة:</strong> ${escapeHtml(g.death_date_gregorian)}</div>` : ''}
+        ${g.grave_reference ? `<div class="popup-meta">📍 <strong>الموقع:</strong> ${escapeHtml(g.grave_reference)}</div>` : ''}
+        <div class="popup-meta">📌 <code>${g.latitude.toFixed(6)}, ${g.longitude.toFixed(6)}</code></div>
+        <a href="${mapsUrl}" target="_blank" rel="noopener" class="popup-link">🧭 توجّه عبر Google Maps</a>
+    `;
+}
+
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = String(s || '');
+    return d.innerHTML;
+}
+
+// ============================================
+// Search
+// ============================================
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+const resultsPanel = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const q = e.target.value.trim();
+    searchTimeout = setTimeout(() => doSearch(q), 200);
+});
+
+function doSearch(q) {
+    Object.values(markers).forEach(m => {
+        const el = m.getElement();
+        if (el && el.querySelector('.grave-marker')) {
+            el.querySelector('.grave-marker').classList.remove('highlighted');
+        }
+    });
+
+    if (!q) {
+        resultsPanel.classList.remove('show');
+        return;
+    }
+    const qn = q.toLowerCase();
+    const matches = allGraves.filter(g =>
+        (g.name || '').toLowerCase().includes(qn) ||
+        (g.grave_reference || '').toLowerCase().includes(qn)
+    );
+
+    if (matches.length === 0) {
+        resultsPanel.innerHTML = '<div class="search-result-row"><span style="color:#9CA3AF">لا توجد نتائج</span></div>';
+        resultsPanel.classList.add('show');
+        return;
+    }
+
+    resultsPanel.innerHTML = matches.slice(0, 30).map(g => `
+        <div class="search-result-row" onclick="focusGrave(${g.id})">
+            <strong>${escapeHtml(g.name)}</strong>
+            ${g.grave_reference || ''} ${g.death_date_gregorian ? '· ' + g.death_date_gregorian : ''}
+        </div>
+    `).join('');
+    resultsPanel.classList.add('show');
+
+    // Highlight matching markers
+    matches.forEach(g => {
+        const m = markers[g.id];
+        if (m) {
+            const el = m.getElement();
+            if (el && el.querySelector('.grave-marker')) {
+                el.querySelector('.grave-marker').classList.add('highlighted');
+            }
+        }
+    });
+}
+
+function focusGrave(id) {
+    const g = allGraves.find(x => x.id === id);
+    if (!g) return;
+    map.flyTo([g.latitude, g.longitude], 22, { duration: 0.6 });
+    setTimeout(() => markers[id].openPopup(), 700);
+    resultsPanel.classList.remove('show');
+}
+
+// Click outside results to close
+document.addEventListener('click', (e) => {
+    if (!resultsPanel.contains(e.target) && e.target !== searchInput) {
+        resultsPanel.classList.remove('show');
+    }
+});
+
+checkAuth();
+loadGraves();
+</script>
+</body>
+</html>
