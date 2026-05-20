@@ -161,7 +161,12 @@ function renderHome(){
 
 function bannerHtml(slides){
   if(!slides||slides.length===0){
-    slides=[{label:'دعاء',type:'ayah',text:'اللهم اغفر لموتانا وموتى المسلمين، وأسكنهم فسيح جناتك.'}];
+    slides=[
+      {label:'',type:'ayah',text:'﴿ كُلُّ مَنْ عَلَيْهَا فَانٍ • وَيَبْقَىٰ وَجْهُ رَبِّكَ ذُو الْجَلَالِ وَالْإِكْرَامِ ﴾'},
+      {label:'',type:'ayah',text:'﴿ كُلُّ نَفْسٍ ذَائِقَةُ الْمَوْتِ ﴾'},
+      {label:'',type:'ayah',text:'﴿ إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾'},
+      {label:'',type:'ayah',text:'اللَّهُمَّ ارْحَمْ مَوْتَانَا وَمَوْتَى الْمُسْلِمِينَ'}
+    ];
   }
   return `<div class="banner" id="bannerEl">
     ${slides.map((s,i)=>`<div class="banner-slide ${i===0?'is-active':''}" data-i="${i}">
@@ -309,7 +314,7 @@ async function shareGrave(id){
   else if(navigator.share){navigator.share({url,title:'مقبرة صفوى'}).catch(()=>{});}
   else{navigator.clipboard.writeText(url).then(()=>toast('✅ تم نسخ الرابط'));}
 }
-function openExt(url){ if(window.SafwaNative&&window.SafwaNative.isNative){window.SafwaNative.openExternal(url);}else{window.open(url,'_blank','noopener');} }
+function openExt(url){ const abs=/^[a-z][a-z0-9+.\-]*:/i.test(url)?url:new URL(url,location.href).href; if(window.SafwaNative&&window.SafwaNative.isNative){window.SafwaNative.openExternal(abs);}else{window.open(abs,'_blank','noopener');} }
 
 // ---- Map ----
 function renderMap(){
@@ -395,7 +400,7 @@ function renderMore(){
       </div>
       <div class="list-group-h">للموظفين والمتطوعين</div>
       <div class="list-group">
-        <div class="list-row" onclick="openExt('/login.html')"><div class="ico" style="background:var(--bg-2);color:var(--muted)">${I.lock(18)}</div><div class="lbl" style="color:var(--muted)">دخول الموظفين والإدارة</div><span class="arrow">${I.forward(16)}</span></div>
+        <div class="list-row" onclick="location.href='/login.html'"><div class="ico" style="background:var(--bg-2);color:var(--muted)">${I.lock(18)}</div><div class="lbl" style="color:var(--muted)">دخول الموظفين والإدارة</div><span class="arrow">${I.forward(16)}</span></div>
       </div>
       <div style="text-align:center;margin-top:22px;font-size:11px;color:var(--muted-2)">الإصدار 2.0.0 · مقبرة صفوى</div>
     </div>
@@ -456,14 +461,18 @@ async function loadData(){
   // Announcements
   const ann=await api('/api/announcements');
   state.announcements=ann.results||[];
-  // Banner content (admin-controlled)
+  // Banner content (admin-controlled) — matches website fields (public-content.js)
   const pc=await api('/api/public-content');
   const slides=[];
   if(pc&&!pc.error){
-    if(pc.ayah||pc.verse) slides.push({label:'آية',type:'ayah',text:pc.ayah||pc.verse});
-    if(pc.condolence||pc.taziah) slides.push({label:'تعزية',type:'announcement',text:pc.condolence||pc.taziah});
-    if(pc.announcement||pc.notice) slides.push({label:'إعلان',type:'maintenance',text:pc.announcement||pc.notice});
-    if(pc.ticker) slides.push({label:'تنبيه',type:'announcement',text:pc.ticker});
+    // Notice (if enabled) shown first as a highlighted slide
+    if(pc.notice_enabled==='1'&&pc.notice_text&&pc.notice_text.trim()){
+      slides.push({label:'تنبيه',type:pc.notice_type==='urgent'?'maintenance':'announcement',text:pc.notice_text.trim()});
+    }
+    // Top banner items: newline-separated, each non-empty line is its own slide
+    if(pc.top_banner_items){
+      pc.top_banner_items.split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>slides.push({label:'',type:'ayah',text:t}));
+    }
   }
   state.banner=slides.length?slides:null;
   // re-render current view if home/announcements
