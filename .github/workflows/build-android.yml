@@ -41,6 +41,17 @@ jobs:
             npx cap add android
           fi
 
+      - name: Generate app icons and splash from resources
+        working-directory: app
+        run: |
+          if [ -f "resources/icon.png" ] && [ -f "resources/splash.png" ]; then
+            npx @capacitor/assets generate --android \
+              --iconBackgroundColor "#0E4D3F" \
+              --iconBackgroundColorDark "#08362C" \
+              --splashBackgroundColor "#0E4D3F" \
+              --splashBackgroundColorDark "#08362C" || echo "Asset generation skipped"
+          fi
+
       - name: Sync Capacitor
         working-directory: app
         run: npx cap sync android

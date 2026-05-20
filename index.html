@@ -10,6 +10,7 @@
 <meta name="theme-color" content="#0E4D3F">
 <link rel="canonical" href="https://safwa-cemetery.com/">
 <link rel="manifest" href="/manifest.json">
+<script src="/js/native-bridge.js"></script>
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="apple-touch-icon" href="/icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -760,12 +761,28 @@ function dismissNotifyPrompt() {
 }
 
 async function enableNotificationsPrompt() {
+    const promptEl = document.getElementById('notifyPrompt');
+    const bodyEl = document.getElementById('notifyPromptBody');
+
+    // If running inside Capacitor app, use native FCM push instead of Web Push
+    if (window.SafwaNative && window.SafwaNative.isNative) {
+        bodyEl.textContent = '⏳ جاري تفعيل الإشعارات النيتف...';
+        const r = await window.SafwaNative.registerForPush();
+        if (r.success) {
+            bodyEl.innerHTML = '<strong>✅ تم تفعيل الإشعارات النيتف.</strong> راح تصلك الإعلانات حتى لو التطبيق مغلق.';
+            await updateFabState();
+            setTimeout(() => promptEl.classList.remove('show'), 2500);
+        } else {
+            bodyEl.textContent = '❌ ' + (r.error || 'تعذّر التفعيل');
+        }
+        return;
+    }
+
+    // Web fallback
     if (!pushPublicKey) {
         alert('الإشعارات غير مفعّلة من الإدارة');
         return;
     }
-    const promptEl = document.getElementById('notifyPrompt');
-    const bodyEl = document.getElementById('notifyPromptBody');
     try {
         const reg = await navigator.serviceWorker.register('/sw.js');
         const permission = await Notification.requestPermission();
@@ -791,6 +808,14 @@ async function enableNotificationsPrompt() {
     } catch (e) {
         bodyEl.textContent = '❌ تعذّر التفعيل: ' + (e.message || 'خطأ غير معروف');
     }
+}
+
+// Set up native push listeners when running inside the app
+if (window.SafwaNative && window.SafwaNative.isNative) {
+    window.SafwaNative.setupPushListeners((notif) => {
+        // Show a toast or modal when notification received in foreground
+        console.log('Notification received in app:', notif);
+    });
 }
 
 setupPushUI();
@@ -997,10 +1022,18 @@ function closeDetail() {
     document.body.style.overflow = '';
 }
 
-function shareGrave(id) {
-    const url = window.location.origin + '/?grave=' + id;
+async function shareGrave(id) {
+    const url = window.location.origin + '/grave/' + id;
+    const title = 'مقبرة صفوى';
+    const text = 'موقع قبر في مقبرة صفوى';
+    // Use native share when in Capacitor app, otherwise web share / clipboard
+    if (window.SafwaNative) {
+        const r = await window.SafwaNative.share({ title, text, url, dialogTitle: 'مشاركة موقع القبر' });
+        if (r.copied) alert('✅ تم نسخ الرابط');
+        return;
+    }
     if (navigator.share) {
-        navigator.share({ url }).catch(() => {});
+        navigator.share({ title, text, url }).catch(() => {});
     } else {
         navigator.clipboard.writeText(url).then(() => alert('✅ تم نسخ الرابط'));
     }
