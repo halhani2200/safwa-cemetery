@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "125651798658",
+    "project_id": "safwa-cemetery",
+    "storage_bucket": "safwa-cemetery.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125651798658:android:bbeb40bae33194f798029b",
+        "android_client_info": {
+          "package_name": "com.safwacemetery.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0M3HwtNtC4sP74gQFxllgssjOXjdwygM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

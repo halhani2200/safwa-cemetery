@@ -23,6 +23,10 @@ import_2024.py
 *.jks
 keystore.properties
 
+# Firebase service account JSON (NEVER commit — full admin access)
+*firebase-adminsdk*.json
+serviceAccountKey.json
+
 # Capacitor build artifacts
 app/node_modules/
 app/android/app/build/

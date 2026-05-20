@@ -41,6 +41,17 @@ jobs:
             npx cap add android
           fi
 
+      - name: Copy Firebase google-services.json
+        working-directory: app
+        run: |
+          if [ -f "firebase/google-services.json" ]; then
+            mkdir -p android/app
+            cp firebase/google-services.json android/app/google-services.json
+            echo "✓ Firebase config copied"
+          else
+            echo "⚠ No google-services.json found — push notifications disabled in this build"
+          fi
+
       - name: Generate app icons and splash from resources
         working-directory: app
         run: |
