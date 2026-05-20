@@ -10,6 +10,13 @@ Run from app/ directory:
 """
 from PIL import Image, ImageDraw, ImageFont
 import os
+import arabic_reshaper
+from bidi.algorithm import get_display
+
+
+def ar(text):
+    """Reshape + bidi-reorder Arabic so PIL renders it connected and right-to-left."""
+    return get_display(arabic_reshaper.reshape(text))
 
 OUT = os.path.dirname(os.path.abspath(__file__))
 PRIMARY = (14, 77, 63, 255)
@@ -69,7 +76,7 @@ def make_splash(size=2732):
         try:
             font_size = int(size * 0.06)
             font = ImageFont.truetype(font_path, font_size)
-            text = 'مقبرة صفوى'
+            text = ar('مقبرة صفوى')
             bbox = draw.textbbox((0, 0), text, font=font)
             tw = bbox[2] - bbox[0]
             draw.text((cx - tw // 2, cy + int(size * 0.18)), text,
@@ -108,7 +115,7 @@ def make_icon(size=1024):
     if font_path:
         try:
             font = ImageFont.truetype(font_path, int(size * 0.08))
-            text = 'مقبرة صفوى'
+            text = ar('مقبرة صفوى')
             bbox = draw.textbbox((0, 0), text, font=font)
             tw = bbox[2] - bbox[0]
             draw.text((cx - tw // 2, cy + int(size * 0.22)), text,
