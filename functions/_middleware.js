@@ -12,9 +12,8 @@ export async function onRequest(context) {
 
     const needsAdmin = path.startsWith('/admin/') || path === '/admin';
     const needsStaff = path.startsWith('/staff/') || path === '/staff';
-    const needsMap = path === '/map.html' || path === '/map';
 
-    if (!needsAdmin && !needsStaff && !needsMap) return next();
+    if (!needsAdmin && !needsStaff) return next();
 
     const user = await getUserFromSession(env, request);
     if (!user) {
@@ -25,7 +24,7 @@ export async function onRequest(context) {
         return Response.redirect(`${url.origin}/login.html`, 302);
     }
 
-    if ((needsStaff || needsMap) && !['admin', 'staff', 'volunteer'].includes(user.role)) {
+    if (needsStaff && !['admin', 'staff', 'volunteer'].includes(user.role)) {
         return Response.redirect(`${url.origin}/login.html`, 302);
     }
 

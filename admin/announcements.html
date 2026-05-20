@@ -270,7 +270,12 @@ async function saveAnnouncement() {
         const data = await r.json();
         if (data.ok || data.id) {
             let msg = id ? '✅ تم التعديل' : '✅ تم الإضافة';
-            if (data.push) msg += ` — أُرسل لـ ${data.push.sent} مشترك`;
+            if (data.push) {
+                const w = data.push.web?.sent ?? data.push.sent ?? 0;
+                const f = data.push.fcm?.sent ?? 0;
+                const t = data.push.total_sent ?? (w + f);
+                msg += ` — أُرسل لـ ${t} مشترك (متصفح: ${w}، تطبيق: ${f})`;
+            }
             showToast(msg);
             closeAnnModal();
             loadAnnouncements();
@@ -320,8 +325,15 @@ async function sendBroadcast() {
         });
         const data = await r.json();
         if (data.ok) {
-            status.textContent = `✅ أُرسل لـ ${data.sent} مشترك` + (data.removed ? ` (إزالة ${data.removed} اشتراك منتهي)` : '');
-            showToast(`✅ تم الإرسال لـ ${data.sent} مشترك`);
+            const webSent = data.web?.sent ?? 0;
+            const fcmSent = data.fcm?.sent ?? 0;
+            const total = data.total_sent ?? (webSent + fcmSent);
+            const webRemoved = data.web?.removed ?? 0;
+            const fcmRemoved = data.fcm?.removed ?? 0;
+            const removed = webRemoved + fcmRemoved;
+            const breakdown = `(متصفح: ${webSent}، تطبيق: ${fcmSent})`;
+            status.textContent = `✅ أُرسل لـ ${total} مشترك ${breakdown}` + (removed ? ` — إزالة ${removed} اشتراك منتهي` : '');
+            showToast(`✅ تم الإرسال لـ ${total} مشترك`);
             document.getElementById('bcast_title').value = '';
             document.getElementById('bcast_body').value = '';
         } else {

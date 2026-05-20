@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>مقبرة صفوى</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E4D3F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مقبرة صفوى">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/js/native-bridge.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+    --primary:#0E4D3F;--primary-dark:#08362C;--primary-light:#1A6B57;
+    --gold:#B8860B;--gold-light:#D4A93A;
+    --cream:#FAF6EE;--cream-dark:#F0E9D8;
+    --text-dark:#1F2937;--text-medium:#4B5563;--text-light:#9CA3AF;
+    --white:#FFFFFF;--red:#DC2626;--green:#10B981;
+    --nav-height:64px;
+    --header-height:52px;
+}
+html{font-size:15px}
+body{
+    font-family:'Tajawal',sans-serif;
+    background:var(--cream);
+    color:var(--text-dark);
+    line-height:1.5;
+    min-height:100vh;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom));
+}
+
+/* ===== Compact App Header ===== */
+.app-header{
+    height:var(--header-height);
+    background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 16px;
+    position:sticky;
+    top:env(safe-area-inset-top);
+    z-index:50;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+.app-header-left{display:flex;align-items:center;gap:10px}
+.app-logo{
+    width:32px;height:32px;
+    background:rgba(212,169,58,0.2);
+    border:1.5px solid var(--gold);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+}
+.app-title{font-family:'Reem Kufi',sans-serif;font-size:1.05rem;font-weight:700}
+.app-header-actions{display:flex;align-items:center;gap:6px}
+.icon-btn{
+    background:rgba(255,255,255,0.1);
+    color:white;
+    border:none;
+    width:36px;height:36px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:16px;
+    transition:background 0.15s;
+    position:relative;
+}
+.icon-btn:active{background:rgba(255,255,255,0.25)}
+.icon-btn.active::after{
+    content:'';position:absolute;top:6px;right:6px;
+    width:8px;height:8px;background:var(--green);border-radius:50%;border:2px solid var(--primary-dark);
+}
+.status-text{font-size:0.7rem;background:rgba(255,255,255,0.12);padding:3px 8px;border-radius:10px;font-weight:600}
+.status-text.open{color:#86EFAC}
+.status-text.closed{color:#FCA5A5}
+
+/* ===== Tab Views (each tab) ===== */
+.tab-view{display:none;animation:fadeIn 0.2s ease-out}
+.tab-view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ===== Search Tab ===== */
+.search-section{padding:14px 14px 0}
+.search-bar{
+    background:white;
+    border-radius:12px;
+    padding:6px;
+    display:flex;
+    align-items:center;
+    box-shadow:0 4px 12px rgba(0,0,0,0.06);
+    border:1.5px solid transparent;
+    transition:border-color 0.2s;
+}
+.search-bar:focus-within{border-color:var(--gold-light)}
+.search-bar input{
+    flex:1;
+    border:none;outline:none;
+    padding:10px 12px;
+    font-family:inherit;
+    font-size:0.95rem;
+    background:transparent;
+    color:var(--text-dark);
+    text-align:right;
+}
+.search-bar input::placeholder{color:var(--text-light)}
+.search-bar button{
+    background:var(--primary);
+    color:white;
+    border:none;
+    border-radius:8px;
+    padding:10px 18px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:0.9rem;
+    cursor:pointer;
+    display:flex;align-items:center;gap:5px;
+    transition:background 0.15s;
+}
+.search-bar button:active{background:var(--primary-dark)}
+
+.search-hint{
+    text-align:center;
+    color:var(--text-medium);
+    font-size:0.78rem;
+    margin-top:10px;
+    padding:0 14px;
+}
+
+.results-area{padding:10px 14px 14px}
+.results-count{
+    color:var(--text-medium);
+    font-size:0.78rem;
+    margin:10px 2px;
+    padding-right:4px;
+}
+
+.grave-card{
+    background:white;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:8px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:all 0.15s;
+}
+.grave-card:active{background:#FFFCF5;border-color:var(--gold-light)}
+.grave-card-avatar{
+    width:44px;height:44px;
+    border-radius:50%;
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:white;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.2rem;
+    flex-shrink:0;
+    overflow:hidden;
+}
+.grave-card-avatar.female{background:linear-gradient(135deg,#7C3AED,#5B21B6)}
+.grave-card-avatar img{width:100%;height:100%;object-fit:cover}
+.grave-card-body{flex:1;min-width:0}
+.grave-card-name{
+    font-weight:700;
+    color:var(--text-dark);
+    font-size:0.92rem;
+    margin-bottom:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.grave-card-meta{
+    font-size:0.75rem;
+    color:var(--text-medium);
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.grave-card-meta span{display:flex;align-items:center;gap:3px}
+.grave-card-chevron{color:var(--text-light);font-size:1.2rem;flex-shrink:0}
+
+.empty-state{
+    text-align:center;
+    padding:50px 30px;
+    color:var(--text-medium);
+}
+.empty-state-icon{font-size:3rem;margin-bottom:10px;opacity:0.5}
+.empty-state-title{font-family:'Reem Kufi',sans-serif;color:var(--text-dark);font-size:1rem;margin-bottom:6px}
+.empty-state-text{font-size:0.85rem;line-height:1.6}
+
+.recent-section{margin-top:6px;padding:0 14px}
+.section-label{
+    font-family:'Reem Kufi',sans-serif;
+    color:var(--text-dark);
+    font-size:0.88rem;
+    font-weight:700;
+    margin:14px 2px 8px;
+    display:flex;align-items:center;gap:6px;
+}
+
+/* ===== Announcements Tab ===== */
+.ann-card{
+    background:white;
+    border-radius:12px;
+    padding:14px;
+    margin:0 14px 8px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    border-right:3px solid var(--gold);
+}
+.ann-card.fresh{border-right-color:var(--red);background:#FEF7F7}
+.ann-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px}
+.ann-card-name{font-family:'Reem Kufi',sans-serif;font-size:0.95rem;color:var(--text-dark);font-weight:700;line-height:1.3}
+.ann-card-kunya{color:var(--gold);font-size:0.78rem;margin-top:2px}
+.ann-card-time{color:var(--text-medium);font-size:0.7rem;white-space:nowrap;flex-shrink:0}
+.ann-card-body{font-size:0.82rem;color:var(--text-medium);line-height:1.5}
+
+/* ===== Info Tab ===== */
+.info-section{padding:14px}
+.info-card{
+    background:white;
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:10px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.05);
+}
+.info-card-title{
+    font-family:'Reem Kufi',sans-serif;
+    color:var(--primary);
+    font-size:0.95rem;
+    font-weight:700;
+    margin-bottom:10px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--cream-dark);
+    display:flex;align-items:center;gap:6px;
+}
+.info-row{
+    display:flex;justify-content:space-between;
+    padding:6px 0;
+    font-size:0.85rem;
+}
+.info-row-label{color:var(--text-medium);font-weight:600}
+.info-row-value{color:var(--text-dark);font-weight:500;text-align:left}
+.info-card a{color:var(--gold);text-decoration:none;font-weight:600}
+
+.duaa-card{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:white;
+    border-radius:12px;
+    padding:18px;
+    margin:0 14px 12px;
+    text-align:center;
+}
+.duaa-card-title{
+    font-family:'Reem Kufi';
+    color:var(--gold-light);
+    margin-bottom:10px;
+    font-size:0.95rem;
+    font-weight:700;
+}
+.duaa-card-text{
+    font-family:'Amiri',serif;
+    font-size:1.05rem;
+    line-height:2;
+    opacity:0.95;
+}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px;margin-bottom:10px}
+.stat-card{
+    background:white;
+    border-radius:10px;
+    padding:14px;
+    text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.05);
+}
+.stat-card-value{
+    font-family:'Reem Kufi',sans-serif;
+    font-size:1.5rem;
+    font-weight:900;
+    color:var(--primary);
+}
+.stat-card-label{
+    font-size:0.72rem;
+    color:var(--text-medium);
+    margin-top:2px;
+}
+
+.btn-primary-block{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;
+    background:var(--primary);
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:14px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:0.95rem;
+    cursor:pointer;
+    text-decoration:none;
+    margin-top:6px;
+    transition:background 0.15s;
+}
+.btn-primary-block:active{background:var(--primary-dark)}
+.btn-secondary-block{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;
+    background:white;
+    color:var(--primary);
+    border:1.5px solid var(--primary);
+    border-radius:10px;
+    padding:12px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:0.9rem;
+    cursor:pointer;
+    text-decoration:none;
+    margin-top:6px;
+}
+
+.about-text{
+    text-align:center;
+    padding:20px 24px;
+    color:var(--text-medium);
+    font-size:0.8rem;
+    line-height:1.7;
+}
+.about-text a{color:var(--gold);text-decoration:none}
+
+/* ===== Map Tab ===== */
+.map-frame{
+    width:100%;
+    height:calc(100vh - var(--header-height) - var(--nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    border:none;
+    display:block;
+}
+.map-locked{
+    padding:60px 24px;
+    text-align:center;
+    color:var(--text-medium);
+}
+
+/* ===== Bottom Tab Bar ===== */
+.app-nav{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    height:calc(var(--nav-height) + env(safe-area-inset-bottom));
+    background:white;
+    padding-bottom:env(safe-area-inset-bottom);
+    border-top:1px solid var(--cream-dark);
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    z-index:100;
+    box-shadow:0 -2px 10px rgba(0,0,0,0.05);
+}
+.nav-tab{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;
+    padding:8px 4px;
+    border:none;
+    background:none;
+    color:var(--text-medium);
+    cursor:pointer;
+    font-family:inherit;
+    font-size:0.7rem;
+    font-weight:600;
+    transition:color 0.15s;
+    position:relative;
+}
+.nav-tab-icon{font-size:1.3rem;line-height:1}
+.nav-tab.active{color:var(--primary)}
+.nav-tab.active::before{
+    content:'';
+    position:absolute;
+    top:0;left:50%;transform:translateX(-50%);
+    width:30px;height:3px;
+    background:var(--gold);
+    border-radius:0 0 4px 4px;
+}
+.nav-tab .badge{
+    position:absolute;
+    top:6px;right:calc(50% - 18px);
+    background:var(--red);
+    color:white;
+    font-size:0.6rem;
+    font-weight:700;
+    min-width:16px;height:16px;
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 4px;
+}
+
+/* ===== Bottom Sheet (Grave Detail) ===== */
+.sheet-backdrop{
+    position:fixed;inset:0;
+    background:rgba(0,0,0,0.5);
+    z-index:200;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease-out;
+}
+.sheet-backdrop.show{opacity:1;pointer-events:auto}
+.sheet{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:var(--cream);
+    border-radius:18px 18px 0 0;
+    z-index:201;
+    max-height:92vh;
+    overflow-y:auto;
+    transform:translateY(100%);
+    transition:transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-bottom:env(safe-area-inset-bottom);
+    -webkit-overflow-scrolling:touch;
+}
+.sheet.show{transform:translateY(0)}
+.sheet-handle{
+    width:40px;height:4px;
+    background:var(--cream-dark);
+    border-radius:2px;
+    margin:8px auto;
+}
+.sheet-close{
+    position:absolute;
+    top:10px;left:14px;
+    background:rgba(0,0,0,0.06);
+    color:var(--text-dark);
+    border:none;
+    width:32px;height:32px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:1rem;
+    display:flex;align-items:center;justify-content:center;
+}
+.sheet-body{padding:8px 14px 90px}
+
+.detail-photo-large{
+    width:100%;
+    height:240px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    margin-bottom:14px;
+}
+.detail-photo-large.female{background:linear-gradient(135deg,#7C3AED,#5B21B6)}
+.detail-photo-large img{width:100%;height:100%;object-fit:cover}
+.detail-photo-large .placeholder{font-size:5rem;color:rgba(255,255,255,0.6)}
+
+.detail-honor{color:var(--gold);font-family:'Amiri',serif;font-size:1rem;font-weight:700}
+.detail-name-large{
+    font-family:'Reem Kufi',sans-serif;
+    color:var(--text-dark);
+    font-size:1.4rem;
+    font-weight:700;
+    margin:2px 0 8px;
+    line-height:1.3;
+}
+.detail-gender-badge{
+    display:inline-block;
+    background:var(--cream-dark);
+    color:var(--primary-dark);
+    padding:3px 10px;
+    border-radius:10px;
+    font-size:0.72rem;
+    font-weight:700;
+    margin-bottom:12px;
+}
+.detail-gender-badge.female{background:#F3E8FF;color:#6B21A8}
+.detail-info-list{background:white;border-radius:12px;padding:6px 14px;margin-bottom:12px}
+.detail-info-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--cream-dark);
+    font-size:0.88rem;
+}
+.detail-info-row:last-child{border-bottom:none}
+.detail-info-label{color:var(--text-medium);font-weight:600}
+.detail-info-value{color:var(--text-dark);font-weight:500;text-align:left}
+
+.sheet-actions{
+    position:sticky;
+    bottom:env(safe-area-inset-bottom);
+    background:linear-gradient(to top,var(--cream) 60%,rgba(250,246,238,0));
+    padding:16px 14px env(safe-area-inset-bottom);
+    margin:0 -14px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+.sheet-actions .btn-primary-block{margin:0}
+
+.action-row{display:flex;gap:8px}
+.action-row .btn-secondary-block{margin:0;flex:1;padding:10px;font-size:0.82rem}
+
+/* ===== Spinner ===== */
+.spinner-wrap{display:flex;justify-content:center;padding:30px}
+.spinner{
+    width:32px;height:32px;
+    border:3px solid var(--cream-dark);
+    border-top-color:var(--gold);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== Toast ===== */
+.toast{
+    position:fixed;
+    left:50%;
+    bottom:calc(var(--nav-height) + env(safe-area-inset-bottom) + 16px);
+    transform:translateX(-50%) translateY(10px);
+    background:var(--text-dark);
+    color:white;
+    padding:10px 18px;
+    border-radius:24px;
+    font-size:0.85rem;
+    z-index:300;
+    opacity:0;
+    pointer-events:none;
+    transition:all 0.2s;
+    box-shadow:0 6px 20px rgba(0,0,0,0.2);
+    max-width:90%;
+    text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:var(--red)}
+.toast.success{background:var(--green)}
+
+/* Hide elements when reused from website features */
+.web-only{display:none !important}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="app-header-left">
+        <div class="app-logo">🕌</div>
+        <div class="app-title">مقبرة صفوى</div>
+    </div>
+    <div class="app-header-actions">
+        <span class="status-text" id="statusText">…</span>
+        <button class="icon-btn" id="bellBtn" onclick="onBellClick()" title="الإشعارات">🔔</button>
+    </div>
+</header>
+
+<!-- ============ SEARCH TAB ============ -->
+<section class="tab-view active" data-tab="search">
+    <div class="search-section">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="ابحث بالاسم..." autocomplete="off" inputmode="search">
+            <button onclick="doSearch()">🔍 بحث</button>
+        </div>
+        <div class="search-hint">اكتب الاسم الكامل أو الاسم الأول</div>
+    </div>
+
+    <div id="searchResults" class="results-area"></div>
+
+    <div id="welcomeState" class="recent-section">
+        <div class="section-label">⚰️ آخر إعلانات الوفاة</div>
+        <div id="welcomeAnnouncements"></div>
+    </div>
+</section>
+
+<!-- ============ MAP TAB ============ -->
+<section class="tab-view" data-tab="map">
+    <iframe id="mapFrame" class="map-frame" src="about:blank" loading="lazy"></iframe>
+</section>
+
+<!-- ============ ANNOUNCEMENTS TAB ============ -->
+<section class="tab-view" data-tab="announcements">
+    <div class="section-label" style="padding:14px 14px 0">⚰️ إعلانات الوفاة</div>
+    <div id="annList"></div>
+</section>
+
+<!-- ============ INFO / MORE TAB ============ -->
+<section class="tab-view" data-tab="info">
+    <div class="info-section">
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-card-value" id="statTotalGraves">—</div>
+                <div class="stat-card-label">قبر مسجّل</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value" id="statVisitors">—</div>
+                <div class="stat-card-label">زائر</div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-title">🕐 أوقات الزيارة</div>
+            <div class="info-row">
+                <span class="info-row-label">الخميس-السبت</span>
+                <span class="info-row-value">الفجر — قبل المغرب بـ 10 د</span>
+            </div>
+            <div class="info-row">
+                <span class="info-row-label">الأحد-الأربعاء</span>
+                <span class="info-row-value">الظهر — قبل المغرب بـ 10 د</span>
+            </div>
+            <div class="info-row" style="margin-top:6px">
+                <span class="info-row-label">الحالة الآن</span>
+                <span class="info-row-value" id="statusTextInfo">جاري التحقق...</span>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-title">📍 موقع المقبرة</div>
+            <p style="color:var(--text-medium);font-size:0.85rem;margin-bottom:10px">الشورى، صفوى 32827 (MX25+2QH)</p>
+            <a href="https://maps.app.goo.gl/t7ZYj8wxZro1UCdz6" class="btn-primary-block" onclick="openExternal(event, this.href)">
+                <span>🧭</span><span>الذهاب إلى المقبرة</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="duaa-card">
+        <div class="duaa-card-title">دعاء أهل القبور</div>
+        <div class="duaa-card-text" id="duaaShortText">
+            السلام على أهل لا إله إلا الله،<br>
+            من أهل لا إله إلا الله،<br>
+            اللهم اغفر لمن قال: لا إله إلا الله.
+        </div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-card">
+            <div class="info-card-title">ℹ️ عن التطبيق</div>
+            <p style="color:var(--text-medium);font-size:0.82rem;line-height:1.7">
+                خدمة مجتمعية غير ربحية لمساعدة عائلات المتوفين على إيجاد قبور أحبائهم في مقبرة صفوى.
+            </p>
+            <a href="/privacy" class="btn-secondary-block" onclick="openExternal(event, this.href)" style="margin-top:10px">
+                <span>🔒</span><span>سياسة الخصوصية</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="about-text">
+        © مقبرة صفوى<br>
+        مشروع خدمي غير ربحي
+    </div>
+</section>
+
+<!-- ============ BOTTOM TAB BAR ============ -->
+<nav class="app-nav">
+    <button class="nav-tab active" data-tab="search" onclick="switchTab('search')">
+        <span class="nav-tab-icon">🔍</span>
+        <span>بحث</span>
+    </button>
+    <button class="nav-tab" data-tab="map" onclick="switchTab('map')">
+        <span class="nav-tab-icon">🗺️</span>
+        <span>الخريطة</span>
+    </button>
+    <button class="nav-tab" data-tab="announcements" onclick="switchTab('announcements')">
+        <span class="nav-tab-icon">⚰️</span>
+        <span>الإعلانات</span>
+        <span class="badge" id="annBadge" style="display:none">0</span>
+    </button>
+    <button class="nav-tab" data-tab="info" onclick="switchTab('info')">
+        <span class="nav-tab-icon">ℹ️</span>
+        <span>المزيد</span>
+    </button>
+</nav>
+
+<!-- ============ DETAIL BOTTOM SHEET ============ -->
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeDetail()"></div>
+<div class="sheet" id="detailSheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeDetail()">✕</button>
+    <div class="sheet-body" id="detailBody"></div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================
+//  Helpers
+// ============================================
+function escapeHtml(s){
+    if(s==null) return '';
+    return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatDate(s){
+    if(!s) return '';
+    const p = String(s).trim().split(/[\/\-\\.]/);
+    if(p.length!==3) return s;
+    const [d,m,y] = p.map(x=>x.trim());
+    if(!/^\d+$/.test(d)||!/^\d+$/.test(m)||!/^\d+$/.test(y)) return s;
+    return `${d.padStart(2,'0')} / ${m.padStart(2,'0')} / ${y}`;
+}
+function timeAgo(ts){
+    if(!ts) return '';
+    const d = new Date(ts);
+    const diff = (Date.now() - d.getTime()) / 1000;
+    if(diff < 60) return 'الآن';
+    if(diff < 3600) return Math.floor(diff/60) + ' د';
+    if(diff < 86400) return Math.floor(diff/3600) + ' س';
+    if(diff < 604800) return Math.floor(diff/86400) + ' ي';
+    return d.toLocaleDateString('ar-EG');
+}
+function toast(msg, type){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' '+type : '');
+    clearTimeout(window._toastT);
+    window._toastT = setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ============================================
+//  Tab switching
+// ============================================
+function switchTab(name){
+    document.querySelectorAll('.tab-view').forEach(v=>v.classList.toggle('active', v.dataset.tab===name));
+    document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+    try{ localStorage.setItem('safwa_app_tab', name); }catch(e){}
+    if(name==='map') loadMapIfNeeded();
+    if(name==='announcements') loadAllAnnouncements();
+}
+
+// ============================================
+//  Search
+// ============================================
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+searchInput.addEventListener('input', ()=>{
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(doSearch, 300);
+});
+searchInput.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter') doSearch();
+});
+
+async function doSearch(){
+    const q = searchInput.value.trim();
+    const results = document.getElementById('searchResults');
+    const welcome = document.getElementById('welcomeState');
+    if(!q){
+        results.innerHTML = '';
+        welcome.style.display = 'block';
+        return;
+    }
+    welcome.style.display = 'none';
+    results.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try{
+        const r = await fetch('/api/search?q=' + encodeURIComponent(q));
+        const d = await r.json();
+        renderResults(d.results || [], q);
+    }catch(e){
+        results.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">خطأ في البحث</div><div class="empty-state-text">${escapeHtml(e.message)}</div></div>`;
+    }
+}
+
+function renderResults(items, q){
+    const el = document.getElementById('searchResults');
+    if(items.length === 0){
+        el.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔎</div>
+                <div class="empty-state-title">لا توجد نتائج لـ "${escapeHtml(q)}"</div>
+                <div class="empty-state-text">جرّب اسماً آخر أو تأكّد من الإملاء.</div>
+            </div>`;
+        return;
+    }
+    el.innerHTML = `
+        <div class="results-count">${items.length} نتيجة لـ "${escapeHtml(q)}"</div>
+        ${items.map(g => graveCard(g)).join('')}
+    `;
+}
+
+function graveCard(g){
+    const isFemale = g.gender === 'انثى';
+    const avatar = g.photo_url
+        ? `<img src="${escapeHtml(g.photo_url)}" alt="">`
+        : (isFemale ? '👤' : '👤');
+    const location = g.row_number && g.grave_number
+        ? `<span>📍 ${escapeHtml(g.section || '-')}/${g.row_number}-${g.grave_number}</span>`
+        : '';
+    const year = g.death_date_gregorian ? (String(g.death_date_gregorian).match(/(\d{4})/) || ['',''])[1] : '';
+    return `
+        <div class="grave-card" onclick="openDetail(${g.id})">
+            <div class="grave-card-avatar ${isFemale?'female':''}">${typeof avatar === 'string' && avatar.startsWith('<img')?avatar:avatar}</div>
+            <div class="grave-card-body">
+                <div class="grave-card-name">${escapeHtml(g.name)}</div>
+                <div class="grave-card-meta">
+                    ${location}
+                    ${year ? `<span>📅 ${year}م</span>` : ''}
+                </div>
+            </div>
+            <div class="grave-card-chevron">›</div>
+        </div>
+    `;
+}
+
+// ============================================
+//  Detail Bottom Sheet
+// ============================================
+async function openDetail(id){
+    const sheet = document.getElementById('detailSheet');
+    const back = document.getElementById('sheetBackdrop');
+    const body = document.getElementById('detailBody');
+    body.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    back.classList.add('show');
+    sheet.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    try{
+        const r = await fetch('/api/grave/' + id);
+        const g = await r.json();
+        if(g.error){
+            body.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">${escapeHtml(g.error)}</div></div>`;
+            return;
+        }
+        renderDetail(g);
+    }catch(e){
+        body.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">خطأ في التحميل</div></div>`;
+    }
+}
+
+function renderDetail(g){
+    const isFemale = g.gender === 'انثى';
+    const honor = isFemale ? 'المرحومة' : 'المرحوم';
+    const mapsUrl = (g.latitude && g.longitude)
+        ? `https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`
+        : null;
+    const body = document.getElementById('detailBody');
+    body.innerHTML = `
+        <div class="detail-photo-large ${isFemale?'female':''}">
+            ${g.photo_url
+                ? `<img src="${escapeHtml(g.photo_url)}" alt="${escapeHtml(g.name)}">`
+                : `<div class="placeholder">👤</div>`}
+        </div>
+
+        <div class="detail-honor">${honor}</div>
+        <h2 class="detail-name-large">${escapeHtml(g.name)}</h2>
+        <span class="detail-gender-badge ${isFemale?'female':''}">${isFemale?'أنثى':'ذكر'}</span>
+
+        <div class="detail-info-list">
+            ${g.death_day ? `<div class="detail-info-row"><span class="detail-info-label">📅 يوم الوفاة</span><span class="detail-info-value">${escapeHtml(g.death_day)}</span></div>`:''}
+            ${g.death_date_hijri ? `<div class="detail-info-row"><span class="detail-info-label">🌙 هجري</span><span class="detail-info-value">${escapeHtml(formatDate(g.death_date_hijri))} هـ</span></div>`:''}
+            ${g.death_date_gregorian ? `<div class="detail-info-row"><span class="detail-info-label">☀️ ميلادي</span><span class="detail-info-value">${escapeHtml(formatDate(g.death_date_gregorian))} م</span></div>`:''}
+            <div class="detail-info-row"><span class="detail-info-label">📍 المنطقة</span><span class="detail-info-value">${escapeHtml(g.section || '-')}</span></div>
+            ${g.row_number && g.grave_number ? `<div class="detail-info-row"><span class="detail-info-label">🪦 الصف / القبر</span><span class="detail-info-value">${g.row_number} - ${g.grave_number}</span></div>`:''}
+        </div>
+
+        <div class="sheet-actions">
+            ${mapsUrl
+                ? `<a href="${mapsUrl}" class="btn-primary-block" onclick="openExternal(event, this.href)"><span>🧭</span><span>توجّه إلى القبر</span></a>`
+                : '<div style="text-align:center;color:var(--text-medium);padding:14px;font-size:0.85rem">📍 الموقع غير متوفر</div>'}
+            <div class="action-row">
+                <button class="btn-secondary-block" onclick="shareGrave(${g.id})"><span>📤</span><span>مشاركة</span></button>
+                <button class="btn-secondary-block" onclick="readFatiha()"><span>🤲</span><span>قراءة الفاتحة</span></button>
+            </div>
+        </div>
+    `;
+}
+
+function closeDetail(){
+    document.getElementById('detailSheet').classList.remove('show');
+    document.getElementById('sheetBackdrop').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+async function shareGrave(id){
+    const url = window.location.origin + '/grave/' + id;
+    if(window.SafwaNative){
+        const r = await window.SafwaNative.share({ title:'مقبرة صفوى', text:'موقع قبر في مقبرة صفوى', url, dialogTitle:'مشاركة' });
+        if(r.copied) toast('✅ تم نسخ الرابط', 'success');
+    } else if(navigator.share){
+        navigator.share({ url, title:'مقبرة صفوى' }).catch(()=>{});
+    } else {
+        navigator.clipboard.writeText(url).then(()=> toast('✅ تم نسخ الرابط', 'success'));
+    }
+}
+
+function readFatiha(){
+    toast('🤲 اللهم ارحم موتانا وموتى المسلمين');
+}
+
+function openExternal(ev, url){
+    if(window.SafwaNative && window.SafwaNative.isNative){
+        ev.preventDefault();
+        window.SafwaNative.openExternal(url);
+    }
+}
+
+// ============================================
+//  Announcements
+// ============================================
+async function loadAnnouncements(limitTo){
+    try{
+        const r = await fetch('/api/announcements');
+        const d = await r.json();
+        return d.results || [];
+    }catch(e){ return []; }
+}
+
+async function loadWelcomeAnnouncements(){
+    const items = await loadAnnouncements();
+    const el = document.getElementById('welcomeAnnouncements');
+    if(items.length === 0){
+        el.innerHTML = `
+            <div class="empty-state" style="padding:30px 20px;background:white;border-radius:12px">
+                <div class="empty-state-icon">🕊️</div>
+                <div class="empty-state-text">لا يوجد إعلانات حالياً</div>
+            </div>`;
+        return;
+    }
+    el.innerHTML = items.slice(0, 3).map(a => annCard(a)).join('');
+    // Update badge
+    const badge = document.getElementById('annBadge');
+    const fresh = items.filter(a => (Date.now() - new Date(a.created_at).getTime()) < 86400000).length;
+    if(fresh > 0){ badge.textContent = fresh; badge.style.display = 'flex'; }
+}
+
+async function loadAllAnnouncements(){
+    const items = await loadAnnouncements();
+    const el = document.getElementById('annList');
+    if(items.length === 0){
+        el.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🕊️</div>
+                <div class="empty-state-title">لا يوجد إعلانات حالياً</div>
+                <div class="empty-state-text">سيتم عرض إعلانات الوفاة هنا</div>
+            </div>`;
+        return;
+    }
+    el.innerHTML = items.map(a => annCard(a)).join('');
+}
+
+function annCard(a){
+    const fresh = (Date.now() - new Date(a.created_at).getTime()) < 86400000;
+    return `
+        <div class="ann-card ${fresh?'fresh':''}">
+            <div class="ann-card-top">
+                <div>
+                    <div class="ann-card-name">${escapeHtml(a.deceased_name || '')}</div>
+                    ${a.kunya ? `<div class="ann-card-kunya">${escapeHtml(a.kunya)}</div>`:''}
+                </div>
+                <div class="ann-card-time">${timeAgo(a.created_at)}</div>
+            </div>
+            ${a.message ? `<div class="ann-card-body">${escapeHtml(a.message)}</div>`:''}
+        </div>
+    `;
+}
+
+// ============================================
+//  Map (lazy iframe)
+// ============================================
+let mapLoaded = false;
+function loadMapIfNeeded(){
+    if(mapLoaded) return;
+    const frame = document.getElementById('mapFrame');
+    frame.src = '/map.html?embed=1';
+    mapLoaded = true;
+}
+
+// ============================================
+//  Status / Stats
+// ============================================
+async function loadStats(){
+    try{
+        const r = await fetch('/api/stats');
+        const s = await r.json();
+        document.getElementById('statTotalGraves').textContent = s.total_graves || '—';
+        document.getElementById('statVisitors').textContent = s.total_visitors || '—';
+    }catch(e){}
+}
+
+function updateStatus(){
+    // Simple time-based check (Saudi time)
+    const now = new Date();
+    const h = now.getHours();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    // Thu(4), Fri(5), Sat(6): from morning, Sun-Wed: from noon
+    const morningDays = [4, 5, 6];
+    const startHour = morningDays.includes(day) ? 5 : 12;
+    const endHour = 18; // approx before maghrib
+    const open = (h >= startHour && h < endHour);
+    const el = document.getElementById('statusText');
+    const elInfo = document.getElementById('statusTextInfo');
+    if(open){
+        el.textContent = '🟢 مفتوحة';
+        el.className = 'status-text open';
+        if(elInfo) elInfo.textContent = '🟢 مفتوحة الآن';
+    } else {
+        el.textContent = '🔴 مغلقة';
+        el.className = 'status-text closed';
+        if(elInfo) elInfo.textContent = '🔴 مغلقة حالياً';
+    }
+}
+
+// ============================================
+//  Bell / Push
+// ============================================
+async function onBellClick(){
+    const btn = document.getElementById('bellBtn');
+    if(window.SafwaNative && window.SafwaNative.isNative){
+        toast('⏳ جاري تفعيل الإشعارات...');
+        const r = await window.SafwaNative.registerForPush();
+        if(r.success){
+            btn.classList.add('active');
+            toast('✅ تم تفعيل الإشعارات', 'success');
+        } else {
+            toast('❌ ' + (r.error || 'تعذّر التفعيل'), 'error');
+        }
+    } else {
+        toast('🔔 الإشعارات متاحة في تطبيق الجوال', 'error');
+    }
+}
+
+if(window.SafwaNative && window.SafwaNative.isNative){
+    window.SafwaNative.setupPushListeners((notif) => {
+        toast('🔔 ' + (notif.title || 'إشعار جديد'));
+    });
+}
+
+// ============================================
+//  Init
+// ============================================
+(function init(){
+    updateStatus();
+    setInterval(updateStatus, 60000);
+    loadStats();
+    loadWelcomeAnnouncements();
+
+    // Restore last tab
+    try{
+        const last = localStorage.getItem('safwa_app_tab');
+        if(last && ['search','map','announcements','info'].includes(last) && last !== 'search'){
+            switchTab(last);
+        }
+    }catch(e){}
+})();
+</script>
+</body>
+</html>

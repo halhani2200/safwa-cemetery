@@ -3,7 +3,7 @@
   "appName": "مقبرة صفوى",
   "webDir": "www",
   "server": {
-    "url": "https://safwa-cemetery.com",
+    "url": "https://safwa-cemetery.com/app/",
     "cleartext": false,
     "androidScheme": "https",
     "iosScheme": "https",
