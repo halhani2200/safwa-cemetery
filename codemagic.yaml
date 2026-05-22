@@ -80,10 +80,18 @@ workflows:
         script: |
           cd app/ios/App
           pod install
-      - name: Set up code signing (auto-create bundle ID, certificate & profile)
+      - name: Set up code signing (revoke stale certs, then auto-create cert & profile)
         script: |
           keychain initialize
-          # Generate a private key so the newly created distribution certificate can be saved with its key
+          # Apple caps distribution certificates; each stateless CI run mints a NEW cert (fresh key),
+          # so repeated runs hit the cap (POST /certificates -> HTTP 409). Revoke existing Apple
+          # Distribution certs first, then create exactly one fresh cert. Keeps us permanently under the cap.
+          app-store-connect certificates list --type DISTRIBUTION --type IOS_DISTRIBUTION --json > /tmp/dist_certs.json 2>/dev/null || echo "[]" > /tmp/dist_certs.json
+          for CID in $(python3 -c "import json; d=json.load(open('/tmp/dist_certs.json')); items=d if isinstance(d,list) else d.get('data',[]); print(' '.join(x['id'] for x in items if x.get('id')))"); do
+            echo "Revoking stale distribution certificate: $CID"
+            app-store-connect certificates delete "$CID" --ignore-not-found < /dev/null || true
+          done
+          # Fresh private key so the newly created distribution certificate can be saved with its key.
           openssl genrsa -out /tmp/cert_key.pem 2048
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @file:/tmp/cert_key.pem
           keychain add-certificates
