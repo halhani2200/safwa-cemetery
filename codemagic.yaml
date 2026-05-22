@@ -72,8 +72,14 @@ workflows:
           # The failed processing consumed build 1; use Codemagic's monotonic build number to stay unique on every re-upload.
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER:-2}" "$PL" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD_NUMBER:-2}" "$PL"
+          # White status-bar text/icons: the green header sits under the iOS status bar and no @capacitor/status-bar plugin is installed,
+          # so force light (white) content app-wide via Info.plist instead of a runtime plugin call.
+          /usr/libexec/PlistBuddy -c "Add :UIStatusBarStyle string UIStatusBarStyleLightContent" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :UIStatusBarStyle UIStatusBarStyleLightContent" "$PL"
+          /usr/libexec/PlistBuddy -c "Add :UIViewControllerBasedStatusBarAppearance bool false" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :UIViewControllerBasedStatusBarAppearance false" "$PL"
           echo "---- Info.plist privacy/version keys after patch ----"
-          for k in NSCameraUsageDescription NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription NSLocationWhenInUseUsageDescription ITSAppUsesNonExemptEncryption CFBundleVersion; do
+          for k in NSCameraUsageDescription NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription NSLocationWhenInUseUsageDescription ITSAppUsesNonExemptEncryption CFBundleVersion UIStatusBarStyle UIViewControllerBasedStatusBarAppearance; do
             echo "$k = $(/usr/libexec/PlistBuddy -c "Print :$k" "$PL" 2>/dev/null)"
           done
       - name: Install CocoaPods
