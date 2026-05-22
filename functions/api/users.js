@@ -23,7 +23,7 @@ export async function onRequestGet(context) {
 
         return jsonResponse({ count: result.results.length, results: result.results });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -46,8 +46,8 @@ export async function onRequestPost(context) {
         if (!['admin', 'staff', 'volunteer'].includes(role)) {
             return jsonResponse({ error: 'الدور غير صحيح' }, 400);
         }
-        if (password.length < 6) {
-            return jsonResponse({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }, 400);
+        if (password.length < 12) {
+            return jsonResponse({ error: 'كلمة المرور يجب أن تكون 12 حرفاً على الأقل' }, 400);
         }
 
         const existing = await env.DB.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
@@ -67,7 +67,7 @@ export async function onRequestPost(context) {
 
         return jsonResponse({ ok: true, id: result.meta.last_row_id }, 201);
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 

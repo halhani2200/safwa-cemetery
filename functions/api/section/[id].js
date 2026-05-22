@@ -30,7 +30,7 @@ export async function onRequestPut(context) {
         await logAudit(env, auth.user.id, 'update', 'section', id, body, request);
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -55,6 +55,6 @@ export async function onRequestDelete(context) {
         await logAudit(env, auth.user.id, 'delete', 'section', id, { code: sec.code }, request);
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

@@ -55,6 +55,6 @@ export async function onRequestGet(context) {
             user_stats: stats.results
         });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

@@ -1,0 +1,13 @@
+name = "safwa-telegram-sync"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+# Pulls Safwa death announcements from the public "القطيف اليوم" Telegram preview
+# and writes them (in our own wording) into the shared announcements table.
+[[d1_databases]]
+binding = "DB"
+database_name = "safwa-cemetery-db"
+database_id = "3fcb49cf-343e-4f13-8bb2-a1ac450af8a2"
+
+[triggers]
+crons = ["*/20 * * * *"]

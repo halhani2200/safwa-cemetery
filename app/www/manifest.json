@@ -1,0 +1,68 @@
+{
+    "name": "مقبرة صفوى - دليل القبور",
+    "short_name": "مقبرة صفوى",
+    "description": "دليل خدمي للبحث عن قبور المتوفين في مقبرة صفوى - يساعد عائلات المتوفين على إيجاد مواقع أحبائهم بسهولة وكرامة",
+    "start_url": "/?source=pwa",
+    "scope": "/",
+    "id": "/",
+    "display": "standalone",
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+    "orientation": "portrait",
+    "lang": "ar",
+    "dir": "rtl",
+    "theme_color": "#0E4D3F",
+    "background_color": "#FAF6EE",
+    "categories": ["lifestyle", "social", "utilities"],
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshot-1.png",
+            "sizes": "1080x1920",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "صفحة البحث الرئيسية"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "البحث عن قبر",
+            "short_name": "بحث",
+            "description": "ابحث عن متوفى بالاسم",
+            "url": "/?action=search",
+            "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+        },
+        {
+            "name": "خريطة المقبرة",
+            "short_name": "خريطة",
+            "description": "عرض خريطة المقبرة التفاعلية",
+            "url": "/map.html",
+            "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+        }
+    ],
+    "prefer_related_applications": false
+}

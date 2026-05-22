@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>بلاغات الوفاة - مقبرة صفوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+<style>
+.dr-wrap{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+.dr-list{display:flex;flex-direction:column;gap:8px;max-height:78vh;overflow:auto}
+.dr-item{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.dr-item:hover{border-color:#0E4D3F}
+.dr-item.active{border-color:#0E4D3F;background:#F0FAF6}
+.dr-name{font-weight:700;color:#1F2937;font-size:0.95rem}
+.dr-sub{font-size:0.8rem;color:#6B7280;margin-top:3px}
+.dr-badge{display:inline-block;font-size:0.72rem;padding:2px 9px;border-radius:999px;font-weight:600;margin-top:6px}
+.b-received{background:#FEF3C7;color:#92400E}.b-staff_review{background:#DBEAFE;color:#1E40AF}
+.b-confirmed{background:#E0E7FF;color:#3730A3}.b-published{background:#D1FAE5;color:#065F46}.b-rejected{background:#FEE2E2;color:#991B1B}
+.dr-detail{background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:20px;min-height:300px}
+.dr-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #F3F4F6;font-size:0.92rem}
+.dr-row .k{color:#6B7280;min-width:130px}.dr-row .v{color:#1F2937;font-weight:600}
+.dr-docs{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+.dr-doc{border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;width:160px}
+.dr-doc img{width:100%;height:120px;object-fit:cover;display:block;background:#F3F4F6}
+.dr-doc .cap{padding:7px 9px;font-size:0.78rem;color:#4B5563;display:flex;justify-content:space-between;align-items:center}
+.dr-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.dr-actions button{border:none;border-radius:9px;padding:9px 16px;font-family:inherit;font-weight:700;font-size:0.88rem;cursor:pointer}
+.btn-confirm{background:#4338CA;color:#fff}.btn-publish{background:#0E4D3F;color:#fff}.btn-reject{background:#fff;color:#B91C1C;border:1px solid #FCA5A5 !important}
+.dr-empty{color:#9CA3AF;text-align:center;padding:60px 20px}
+.dr-priv{background:#FFF8E1;border:1px solid #FDE68A;border-radius:10px;padding:10px 12px;font-size:0.82rem;color:#7A5A0A;margin-top:14px;display:flex;gap:8px}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🕌</div>
+            <div><div class="sidebar-title">مقبرة صفوى</div><div class="sidebar-subtitle" id="userBadge">جاري التحميل...</div></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/" class="nav-link"><span>📊</span><span>الرئيسية</span></a>
+            <a href="/admin/graves.html" class="nav-link"><span>🪦</span><span>إدارة القبور</span></a>
+            <a href="/admin/death-reports.html" class="nav-link active"><span>🕊️</span><span>بلاغات الوفاة</span></a>
+            <a href="/admin/announcements.html" class="nav-link"><span>⚰️</span><span>إعلانات الوفاة</span></a>
+            <a href="/admin/users.html" class="nav-link"><span>👥</span><span>المستخدمون</span></a>
+            <a href="/admin/audit.html" class="nav-link"><span>📋</span><span>سجل النشاط</span></a>
+            <a href="/admin/reports.html" class="nav-link"><span>📝</span><span>بلاغات الأخطاء</span></a>
+            <a href="/admin/settings.html" class="nav-link"><span>⚙️</span><span>الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/" class="nav-link"><span>🌐</span><span>عرض الموقع</span></a>
+            <button onclick="logout()" class="nav-link logout-btn"><span>🚪</span><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+    <main class="main-content">
+        <div class="page-header"><h1>🕊️ بلاغات الوفاة</h1><p>البلاغات الواردة من العائلات عبر التطبيق</p></div>
+        <div class="dr-wrap">
+            <div class="dr-list" id="drList"><div class="dr-empty">جاري التحميل…</div></div>
+            <div class="dr-detail" id="drDetail"><div class="dr-empty">اختر بلاغاً من القائمة لعرض تفاصيله</div></div>
+        </div>
+    </main>
+</div>
+<script src="/admin/admin.js"></script>
+<script>
+const STATUS = { received:'تم الاستلام', staff_review:'قيد المراجعة', confirmed:'مؤكّد', published:'منشور', rejected:'مرفوض' };
+let reports = [], currentId = null;
+const esc = s => s==null?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function loadReports(){
+    const r = await fetch('/api/death-reports');
+    if (r.status === 401) { window.location.href = '/login.html'; return; }
+    const d = await r.json();
+    reports = d.results || [];
+    renderList();
+}
+function renderList(){
+    const el = document.getElementById('drList');
+    if (!reports.length) { el.innerHTML = '<div class="dr-empty">لا توجد بلاغات بعد</div>'; return; }
+    el.innerHTML = reports.map(r => `
+        <div class="dr-item ${r.id===currentId?'active':''}" onclick="openReport(${r.id})">
+            <div class="dr-name">${esc(r.deceased_name)}</div>
+            <div class="dr-sub">المُبلِّغ: ${esc(r.reporter_name)} · ${esc(r.reporter_phone)}</div>
+            <div class="dr-sub">${esc(r.ref||'')} · ${new Date(r.created_at+'Z').toLocaleString('ar-EG')}</div>
+            <span class="dr-badge b-${r.status}">${STATUS[r.status]||r.status}</span>
+        </div>`).join('');
+}
+async function openReport(id){
+    currentId = id; renderList();
+    const el = document.getElementById('drDetail');
+    el.innerHTML = '<div class="dr-empty">جاري التحميل…</div>';
+    const r = await fetch('/api/death-reports/'+id);
+    if (r.status === 401) { window.location.href = '/login.html'; return; }
+    const d = await r.json();
+    const docs = (d.documents||[]).map(doc => {
+        const url = `/api/death-reports/${id}/doc/${doc.id}`;
+        const isImg = (doc.content_type||'').startsWith('image/');
+        return `<div class="dr-doc">
+            ${isImg ? `<a href="${url}" target="_blank"><img src="${url}" alt=""></a>`
+                    : `<a href="${url}" target="_blank" style="display:flex;height:120px;align-items:center;justify-content:center;background:#F3F4F6;font-size:2rem">📄</a>`}
+            <div class="cap"><span>${esc(doc.kind||'مستند')}</span><a href="${url}" target="_blank">فتح</a></div>
+        </div>`;
+    }).join('') || '<div class="dr-empty" style="padding:20px">لا مستندات</div>';
+    const row = (k,v) => v ? `<div class="dr-row"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>` : '';
+    el.innerHTML = `
+        <h2 style="margin:0 0 4px">${esc(d.deceased_name)}</h2>
+        <div style="color:#6B7280;font-size:0.85rem;margin-bottom:14px">${esc(d.ref||'')} — <span class="dr-badge b-${d.status}">${STATUS[d.status]||d.status}</span></div>
+        <h3 style="font-size:0.95rem;color:#0E4D3F">المُبلِّغ</h3>
+        ${row('الاسم', d.reporter_name)}${row('صلة القرابة', d.reporter_relation)}${row('الجوال', d.reporter_phone)}${row('رقم الهوية', d.reporter_nid)}
+        <h3 style="font-size:0.95rem;color:#0E4D3F;margin-top:16px">المتوفّى</h3>
+        ${row('الاسم', d.deceased_name)}${row('الجنس', d.deceased_gender)}${row('العمر', d.deceased_age)}${row('رقم الهوية', d.deceased_nid)}
+        <h3 style="font-size:0.95rem;color:#0E4D3F;margin-top:16px">المستندات</h3>
+        <div class="dr-docs">${docs}</div>
+        <div class="dr-priv">🔒 هذه المستندات سرّية — لا تُشارَك ولا تُحفظ خارج النظام.</div>
+        <div class="dr-actions">
+            <button class="btn-confirm" onclick="setStatus(${id},'confirmed')">تأكيد البيانات</button>
+            <button class="btn-publish" onclick="setStatus(${id},'published')">نشر إعلان الوفاة</button>
+            <button class="btn-reject" onclick="setStatus(${id},'rejected')">رفض</button>
+        </div>`;
+}
+async function setStatus(id, status){
+    if (status==='rejected' && !confirm('تأكيد رفض هذا البلاغ؟')) return;
+    const r = await fetch('/api/death-reports/'+id, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status}) });
+    if (r.ok) { await loadReports(); openReport(id); }
+    else alert('تعذّر تحديث الحالة');
+}
+loadReports();
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+# Codemagic CI/CD — builds, signs and ships the Safwa Cemetery iOS app WITHOUT a Mac.
+# Builds the bundled-UI iOS app (no server.url), signs via App Store Connect API key
+# (automatic signing), and uploads to TestFlight.
+#
+# OWNER SETUP (one-time, in the Codemagic UI):
+#   1. Connect the GitHub repo halhani2200/safwa-cemetery.
+#   2. Team Settings → Integrations → App Store Connect → add the API key
+#      (Issuer ID + Key ID + .p8). Name the integration exactly: SafwaASC
+#   3. After the app record exists in App Store Connect, set APP_STORE_APP_ID below
+#      (the numeric Apple ID of the app).
+#   4. (Optional, for OTA) add CAPGO_TOKEN as a secure env var and uncomment the
+#      "Publish Capgo bundle" step.
+
+workflows:
+  ios-release:
+    name: Safwa Cemetery — iOS Release
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: SafwaASC
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.safwacemetery.app
+      vars:
+        BUNDLE_ID: "com.safwacemetery.app"
+        # APP_STORE_APP_ID: "0000000000"   # set after the App Store Connect app record exists
+      node: 20
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          cd app
+          npm ci || npm install
+      - name: Add Capgo OTA plugin
+        script: |
+          cd app
+          npm install @capgo/capacitor-updater
+      - name: Prepare iOS config (bundle local UI + Capgo)
+        script: |
+          cd app
+          node scripts/ios-prepare.js
+      - name: Bundle web UI into www
+        script: |
+          cd app
+          npm run build:web
+      - name: Add iOS platform if missing
+        script: |
+          cd app
+          [ -d ios ] || npx cap add ios
+      - name: Capacitor sync (iOS)
+        script: |
+          cd app
+          npx cap sync ios
+      - name: Force iPhone-only (TARGETED_DEVICE_FAMILY=1)
+        script: |
+          cd app/ios/App
+          /usr/libexec/PlistBuddy -c "Set :objects:* :buildSettings:TARGETED_DEVICE_FAMILY 1" App.xcodeproj/project.pbxproj 2>/dev/null || \
+            sed -i '' 's/TARGETED_DEVICE_FAMILY = .*/TARGETED_DEVICE_FAMILY = 1;/g' App.xcodeproj/project.pbxproj || true
+      - name: Install CocoaPods
+        script: |
+          cd app/ios/App
+          pod install
+      - name: Set up provisioning profiles
+        script: |
+          xcode-project use-profiles
+      - name: Build signed IPA
+        script: |
+          cd app/ios/App
+          xcode-project build-ipa --workspace App.xcworkspace --scheme App
+      # - name: Publish Capgo bundle (light OTA updates, post-approval)
+      #   script: |
+      #     cd app
+      #     npx @capgo/cli bundle upload --channel production --apikey "$CAPGO_TOKEN" || true
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

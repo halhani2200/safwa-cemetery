@@ -80,6 +80,6 @@ export async function onRequestPost(context) {
         return jsonResponse({ ok: true, extracted });
 
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

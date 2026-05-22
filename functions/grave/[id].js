@@ -46,7 +46,7 @@ export async function onRequestGet(context) {
         grave = await env.DB.prepare(`
             SELECT id, name, gender, death_day, death_date_hijri, death_date_gregorian,
                    section, row_number, grave_number, grave_reference,
-                   latitude, longitude, photo_url, notes
+                   latitude, longitude, photo_url
             FROM graves WHERE id = ?
         `).bind(id).first();
     } catch (e) {
@@ -99,7 +99,10 @@ export async function onRequestGet(context) {
         url: canonical
     };
     // Strip undefined fields
-    const schemaJson = JSON.stringify(schema, (k, v) => v === undefined ? undefined : v, 2);
+    const _bs = String.fromCharCode(92);
+    const schemaJson = JSON.stringify(schema, (k, v) => v === undefined ? undefined : v, 2)
+        .split('<').join(_bs + 'u003c')
+        .split('>').join(_bs + 'u003e');
 
     const html = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -198,12 +201,12 @@ footer{text-align:center;padding:24px 20px;color:var(--text-medium);font-size:0.
                     <span class="label">📍 موقع القبر</span>
                     <span class="value">المنطقة ${escapeHtml(grave.section || '-')}${grave.row_number && grave.grave_number ? ` — الصف ${grave.row_number}، القبر ${grave.grave_number}` : ''}</span>
                 </div>
-                ${grave.latitude && grave.longitude ? `<div class="row"><span class="label">📌 الإحداثيات</span><span class="value" style="font-family:monospace;font-size:0.85rem">${grave.latitude}, ${grave.longitude}</span></div>` : ''}
+                ${grave.latitude && grave.longitude ? `<div class="row"><span class="label">📌 الإحداثيات</span><span class="value" style="font-family:monospace;font-size:0.85rem">${escapeHtml(grave.latitude)}, ${escapeHtml(grave.longitude)}</span></div>` : ''}
             </div>
         </div>
 
         <div class="actions">
-            ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" rel="noopener" class="btn"><span>🧭</span><span>توجّه إلى القبر</span></a>` : ''}
+            ${mapsUrl ? `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener" class="btn"><span>🧭</span><span>توجّه إلى القبر</span></a>` : ''}
             <a href="/?q=${encodeURIComponent(grave.name)}" class="btn btn-outline">🔍 بحث في الموقع</a>
             <a href="/map.html" class="btn btn-gold">🗺️ خريطة المقبرة</a>
         </div>

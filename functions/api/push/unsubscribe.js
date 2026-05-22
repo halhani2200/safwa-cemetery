@@ -9,6 +9,6 @@ export async function onRequestPost(context) {
         await env.DB.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').bind(endpoint).run();
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

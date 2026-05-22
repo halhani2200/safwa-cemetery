@@ -96,18 +96,12 @@ def make_splash(size=2732):
 
 
 def make_icon(size=1024):
-    """Standalone app icon — same design but tighter framing for store/launcher."""
-    img = Image.new('RGBA', (size, size), PRIMARY)
+    """Standalone app icon — OPAQUE square (no alpha / no rounded corners).
+    App Store rejects icons with transparency; iOS & Android apply their own
+    corner masking, so the source must be a flat opaque square."""
+    img = Image.new('RGB', (size, size), PRIMARY[:3])
     draw = ImageDraw.Draw(img)
     cx, cy = size // 2, size // 2
-
-    # Rounded background mask
-    radius = int(size * 0.22)
-    mask = Image.new('L', (size, size), 0)
-    mdraw = ImageDraw.Draw(mask)
-    mdraw.rounded_rectangle([0, 0, size - 1, size - 1], radius=radius, fill=255)
-    img.putalpha(mask)
-    draw = ImageDraw.Draw(img)
 
     draw_logo(draw, cx, cy - int(size * 0.08), size)
 

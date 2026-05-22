@@ -23,7 +23,7 @@ export async function onRequestGet(context) {
         const result = await env.DB.prepare(sql).all();
         return jsonResponse({ count: result.results.length, results: result.results });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -79,6 +79,6 @@ export async function onRequestPost(context) {
 
         return jsonResponse({ ok: true, id, push: pushResult });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

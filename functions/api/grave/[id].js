@@ -28,7 +28,7 @@ export async function onRequestGet(context) {
         query = await env.DB.prepare(`
             SELECT id, name, gender, death_day, death_date_hijri, death_date_gregorian,
                    section, row_number, grave_number, grave_reference,
-                   latitude, longitude, photo_url, notes
+                   latitude, longitude, photo_url
             FROM graves WHERE id = ?
         `).bind(id).first();
     }
@@ -47,6 +47,14 @@ export async function onRequestPut(context) {
     if (!id) return jsonResponse({ error: 'invalid id' }, 400);
 
     try {
+        // Volunteers may only edit graves they created themselves
+        if (authResult.user.role === 'volunteer') {
+            const owned = await env.DB.prepare('SELECT created_by FROM graves WHERE id = ?').bind(id).first();
+            if (!owned) return jsonResponse({ error: 'not found' }, 404);
+            if (owned.created_by !== authResult.user.id) {
+                return jsonResponse({ error: 'لا تملك صلاحية تعديل هذا القبر' }, 403);
+            }
+        }
         const body = await request.json();
         const normalized = normalizeArabic(body.name || '');
         const isAdmin = authResult.user.role === 'admin';
@@ -112,7 +120,7 @@ export async function onRequestPut(context) {
 
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -130,6 +138,6 @@ export async function onRequestDelete(context) {
         await logAudit(env, authResult.user.id, 'delete', 'grave', id, null, request);
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

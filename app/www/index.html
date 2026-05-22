@@ -2,30 +2,496 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="/js/config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>مقبرة صفوى</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E4D3F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/js/native-bridge.js"></script>
+<link rel="stylesheet" href="/app/app.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,sans-serif;background:#0E4D3F;color:white;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
-.loading{padding:20px}
-.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);border-top-color:#B8860B;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* App root sizing for full-viewport mobile shell */
+html,body{height:100%;margin:0;background:var(--bg,#F7F2E6)}
+#app{height:100dvh;position:relative;overflow:hidden}
+:root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+/* Bottom nav pinned to bottom (screen is absolute, so nav must be too) */
+.app .bottom-nav{position:absolute;left:0;right:0;bottom:0;z-index:10}
+#screenHost{position:absolute;inset:0}
+/* status bar text in header */
+.appbar-status{font-size:11px;opacity:.85;display:flex;align-items:center;gap:4px}
+.appbar-status .d{width:6px;height:6px;border-radius:50%;background:#86EFAC}
+.appbar-status .d.closed{background:#FCA5A5}
 </style>
 </head>
 <body>
-<div class="loading">
-    <div class="spinner"></div>
-    <p>جاري التحميل...</p>
-</div>
+<div class="app" id="app"></div>
+
 <script>
-// Fallback launcher — when running under Capacitor with server.url set,
-// the webview loads safwa-cemetery.com directly. This page only shows
-// if loaded standalone (e.g., during build verification).
-setTimeout(() => {
-    if (window.location.host !== 'safwa-cemetery.com') {
-        window.location.href = 'https://safwa-cemetery.com/?source=app';
+// ============================================================
+//  Safwa Cemetery — Native App Shell (vanilla, wired to real API)
+//  Design system: app.css | Icons: inline SVG (Lucide-style)
+// ============================================================
+
+// ---------- SVG Icons ----------
+const svg = (paths, sz=20, sw=1.75) =>
+  `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const I = {
+  search:(s)=>svg('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',s),
+  map:(s)=>svg('<path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',s),
+  megaphone:(s)=>svg('<path d="M3 11v2a2 2 0 0 0 2 2h1l4 4V5l-4 4H5a2 2 0 0 0-2 2z"/><path d="M14 7a5 5 0 0 1 0 10"/><path d="M18 4a9 9 0 0 1 0 16"/>',s),
+  more:(s)=>svg('<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',s),
+  nav:(s)=>svg('<polygon points="3 11 22 2 13 21 11 13 3 11"/>',s),
+  share:(s)=>svg('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/>',s),
+  flag:(s)=>svg('<path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/>',s),
+  back:(s)=>svg('<polyline points="15 18 9 12 15 6"/>',s),
+  forward:(s)=>svg('<polyline points="9 18 15 12 9 6"/>',s),
+  close:(s)=>svg('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',s),
+  plus:(s)=>svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',s),
+  mic:(s)=>svg('<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/>',s),
+  pin:(s)=>svg('<path d="M20 10c0 7-8 12-8 12s-8-5-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/>',s),
+  person:(s)=>svg('<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',s),
+  calendar:(s)=>svg('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',s),
+  mosque:(s)=>svg('<path d="M12 2c-2 3 1 4 0 7"/><path d="M3 22V11a9 9 0 0 1 18 0v11"/><path d="M3 22h18"/><line x1="9" y1="22" x2="9" y2="14"/><line x1="15" y1="22" x2="15" y2="14"/>',s),
+  phone:(s)=>svg('<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',s),
+  whatsapp:(s)=>svg('<path d="M21 11.5a8.4 8.4 0 0 1-1.3 4.5L21 21l-5.2-1.5a8.4 8.4 0 1 1 5.2-8z"/>',s,1.6),
+  bell:(s)=>svg('<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',s),
+  check:(s)=>svg('<polyline points="20 6 9 17 4 12"/>',s),
+  info:(s)=>svg('<circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/>',s),
+  alert:(s)=>svg('<path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/>',s),
+  compass:(s)=>svg('<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',s),
+  lock:(s)=>svg('<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',s),
+  user:(s)=>svg('<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',s),
+  image:(s)=>svg('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',s),
+  clock:(s)=>svg('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',s),
+  shield:(s)=>svg('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',s),
+  users:(s)=>svg('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',s),
+  heart:(s)=>svg('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',s),
+  beads:(s)=>svg('<circle cx="12" cy="6" r="2"/><circle cx="6" cy="9" r="1.5"/><circle cx="18" cy="9" r="1.5"/><circle cx="4" cy="15" r="1.5"/><circle cx="20" cy="15" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>',s),
+  grave:(s)=>`<svg width="${s||26}" height="${s||26}" viewBox="0 0 24 24" fill="none"><path d="M6 22V11a6 6 0 1 1 12 0v11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="6" y1="22" x2="18" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="9" y1="13.5" x2="15" y2="13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+  arch:(s)=>`<svg width="${s||26}" height="${s||26}" viewBox="0 0 24 24" fill="none"><path d="M5 22V12a7 7 0 0 1 14 0v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="5" y1="22" x2="19" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="11" r="1.4" fill="currentColor"/></svg>`,
+  crest:(s,c)=>`<svg width="${s||56}" height="${s||56}" viewBox="0 0 64 64" fill="none"><path d="M32 6 L52 14 V32 C52 44 44 54 32 58 C20 54 12 44 12 32 V14 L32 6z" stroke="${c||'#D4A93A'}" stroke-width="1.6"/><path d="M32 18 a8 8 0 0 1 8 8 v14 h-16 v-14 a8 8 0 0 1 8-8z" stroke="${c||'#D4A93A'}" stroke-width="1.4"/><line x1="24" y1="46" x2="40" y2="46" stroke="${c||'#D4A93A'}" stroke-width="1.4" stroke-linecap="round"/><circle cx="32" cy="14" r="1.5" fill="${c||'#D4A93A'}"/></svg>`,
+};
+
+// ---------- Helpers ----------
+const esc = (s) => s==null?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = (s) => { if(!s)return''; const p=String(s).trim().split(/[\/\-\\.]/); if(p.length!==3)return s; const[d,m,y]=p.map(x=>x.trim()); if(!/^\d+$/.test(d)||!/^\d+$/.test(m)||!/^\d+$/.test(y))return s; return `${d.padStart(2,'0')} / ${m.padStart(2,'0')} / ${y}`; };
+const timeAgo = (ts) => { if(!ts)return''; const d=new Date(ts),diff=(Date.now()-d.getTime())/1000; if(diff<60)return'الآن'; if(diff<3600)return Math.floor(diff/60)+' د'; if(diff<86400)return Math.floor(diff/3600)+' س'; if(diff<604800)return Math.floor(diff/86400)+' ي'; return d.toLocaleDateString('ar-EG'); };
+const isFresh = (ts) => ts && (Date.now()-new Date(ts).getTime())<86400000;
+async function api(path){ try{const r=await fetch((window.API_BASE||'')+path);return await r.json();}catch(e){return{error:e.message};} }
+
+// ---------- App State ----------
+const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null };
+
+// ---------- Toast ----------
+function toast(msg, kind){
+  let t=document.getElementById('appToast');
+  if(!t){t=document.createElement('div');t.id='appToast';t.className='toast';document.getElementById('app').appendChild(t);}
+  t.innerHTML = `<span class="ico">${I.info(16)}</span><span>${esc(msg)}</span>`;
+  t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ---------- Status (visit hours) ----------
+function visitStatus(){
+  const now=new Date(),h=now.getHours()+now.getMinutes()/60,day=now.getDay();
+  const morning=[4,5,6].includes(day); const start=morning?5.5:12; const end=17.83;
+  return (h>=start&&h<end);
+}
+
+// ============================================================
+//  SCREENS
+// ============================================================
+function appbar(title, sub, opts={}){
+  const left = opts.back
+    ? `<button class="appbar-icon" onclick="back()">${I.back(20)}</button>`
+    : `<div class="appbar-logo">${I.crest(20,'currentColor')}</div>`;
+  const right = opts.noBell ? '<div style="width:38px"></div>'
+    : `<button class="appbar-icon" id="bellBtn" onclick="onBell()">${I.bell(20)}</button>`;
+  return `<div class="appbar ${opts.cream?'cream':''}">
+    ${left}
+    <div class="appbar-title">${esc(title)}${sub?`<span class="appbar-sub">${esc(sub)}</span>`:''}</div>
+    ${right}
+  </div>`;
+}
+
+// ---- Home ----
+function renderHome(){
+  const open = visitStatus();
+  const slides = (state.banner||[]);
+  const annHtml = (state.announcements===null)
+    ? `<div class="skel" style="height:88px;border-radius:14px"></div>`
+    : (state.announcements.length===0
+        ? `<div class="empty" style="padding:24px"><div class="ico">${I.heart(22)}</div><p>لا يوجد إعلانات حالياً</p></div>`
+        : state.announcements.slice(0,2).map(a=>annCard(a,true)).join(''));
+
+  return `<div class="screen">
+    ${appbar('مقبرة صفوى','السلام عليكم ورحمة الله')}
+    <div class="screen-body" style="padding:12px 16px 16px">
+      ${bannerHtml(slides)}
+      <div style="margin-top:14px">
+        <div class="search" onclick="push('search')">
+          ${I.search(18)}
+          <input placeholder="ابحث بالاسم، المنطقة، أو رقم القبر" readonly>
+        </div>
+      </div>
+      <div style="margin-top:14px"><div class="quick-row">
+        <button class="quick" onclick="go('map')"><div class="quick-ico">${I.map(20)}</div><div class="quick-label">خريطة المقبرة</div></button>
+        <button class="quick" onclick="push('contacts')"><div class="quick-ico gold">${I.phone(20)}</div><div class="quick-label">أرقام التواصل</div></button>
+        <button class="quick" onclick="push('photos')"><div class="quick-ico">${I.image(20)}</div><div class="quick-label">مكتبة الصور</div></button>
+      </div></div>
+      <div style="margin-top:18px">
+        <div class="section-h"><h3>آخر إعلانات الوفاة</h3><a onclick="go('announcements')">عرض الكل</a></div>
+        <div style="display:flex;flex-direction:column;gap:10px">${annHtml}</div>
+      </div>
+      <div style="margin-top:18px">
+        <div class="section-h"><h3>أوقات الزيارة اليوم</h3></div>
+        <div class="list-group"><div class="list-row" style="min-height:auto;padding:12px 14px">
+          <div class="ico">${I.clock(18)}</div>
+          <div class="lbl">${open?'مفتوحة الآن':'مغلقة حالياً'}<div style="font-size:12px;color:var(--muted);font-weight:400">حسب مواقيت الصلاة</div></div>
+          <span class="pill ${open?'approved':'rejected'}">${open?I.check(11)+' مفتوح':'مغلق'}</span>
+        </div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bannerHtml(slides){
+  if(!slides||slides.length===0){
+    slides=[
+      {label:'',type:'ayah',text:'﴿ كُلُّ مَنْ عَلَيْهَا فَانٍ • وَيَبْقَىٰ وَجْهُ رَبِّكَ ذُو الْجَلَالِ وَالْإِكْرَامِ ﴾'},
+      {label:'',type:'ayah',text:'﴿ كُلُّ نَفْسٍ ذَائِقَةُ الْمَوْتِ ﴾'},
+      {label:'',type:'ayah',text:'﴿ إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾'},
+      {label:'',type:'ayah',text:'اللَّهُمَّ ارْحَمْ مَوْتَانَا وَمَوْتَى الْمُسْلِمِينَ'}
+    ];
+  }
+  return `<div class="banner" id="bannerEl">
+    ${slides.map((s,i)=>`<div class="banner-slide ${i===0?'is-active':''}" data-i="${i}">
+      <div style="flex:1">
+        <div class="banner-kind">${s.type==='maintenance'?I.alert(16):s.type==='announcement'?I.megaphone(16):I.heart(16)}<span>${esc(s.label||'')}</span></div>
+        <div class="banner-text ${s.type==='ayah'?'ayah':''}">${esc(s.text||'')}</div>
+      </div>
+    </div>`).join('')}
+    ${slides.length>1?`<div class="banner-dots">${slides.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join('')}</div>`:''}
+  </div>`;
+}
+
+let bannerTimer=null;
+function startBanner(){
+  clearInterval(bannerTimer);
+  const el=document.getElementById('bannerEl'); if(!el)return;
+  const slides=el.querySelectorAll('.banner-slide'); if(slides.length<2)return;
+  const dots=el.querySelectorAll('.banner-dots i'); let idx=0;
+  bannerTimer=setInterval(()=>{
+    slides[idx].classList.remove('is-active'); if(dots[idx])dots[idx].classList.remove('on');
+    idx=(idx+1)%slides.length;
+    slides[idx].classList.add('is-active'); if(dots[idx])dots[idx].classList.add('on');
+  },5500);
+}
+
+// ---- Announcement card ----
+function annCard(a, brief){
+  const fresh=isFresh(a.created_at);
+  const name=a.deceased_name||a.name||'';
+  const kunya=a.kunya?` <span style="color:var(--gold);font-size:13px">${esc(a.kunya)}</span>`:'';
+  return `<div class="ann-card ${fresh?'new':''}" ${brief?'onclick="go(\'announcements\')"':''}>
+    <div class="ann-head"><h4 class="ann-name">${esc(name)}${kunya}</h4>${fresh?'<span class="ann-tag">جديد</span>':`<span style="font-size:11px;color:var(--muted)">${timeAgo(a.created_at)}</span>`}</div>
+    <div class="ann-rahima">إنا لله وإنا إليه راجعون</div>
+    ${a.message?`<div class="ann-detail"><span class="lbl">التفاصيل</span><span>${esc(a.message)}</span></div>`:''}
+  </div>`;
+}
+
+// ---- Search ----
+function renderSearch(){
+  return `<div class="screen no-nav">
+    <div class="appbar cream" style="flex-direction:column;align-items:stretch;gap:10px;padding:10px 14px 12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="appbar-icon" onclick="back()">${I.back(20)}</button>
+        <div class="search" style="flex:1;height:42px">
+          ${I.search(17)}
+          <input id="searchInput" placeholder="ابحث بالاسم أو الموقع" inputmode="search" autocomplete="off">
+          <button class="appbar-icon" style="width:28px;height:28px;color:var(--muted)" onclick="document.getElementById('searchInput').value='';doSearch();">${I.close(16)}</button>
+        </div>
+      </div>
+    </div>
+    <div class="screen-body" style="padding:12px 14px 16px" id="searchBody">
+      <div class="empty" style="padding:40px 24px"><div class="ico">${I.search(22)}</div><h4>ابحث عن متوفى</h4><p>اكتب الاسم الكامل أو الاسم الأول</p></div>
+    </div>
+  </div>`;
+}
+
+function graveCard(g){
+  const f = g.gender==='انثى';
+  const loc = (g.row_number&&g.grave_number)?`المنطقة ${esc(g.section||'-')} · الصف ${g.row_number} · القبر ${g.grave_number}`:`المنطقة ${esc(g.section||'-')}`;
+  const hijri = g.death_date_hijri?`<div class="grave-loc">${I.calendar(11)}<span>${esc(fmtDate(g.death_date_hijri))}هـ</span></div>`:'';
+  const avatar = g.photo_url
+    ? `<div class="grave-avatar ${f?'female':''}" style="overflow:hidden;padding:0"><img src="${esc(g.photo_url)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
+    : `<div class="grave-avatar ${f?'female':''}">${f?I.arch(26):I.grave(26)}</div>`;
+  return `<div class="grave-card" onclick="openDetail(${g.id})">
+    ${avatar}
+    <div class="grave-body">
+      <div class="grave-name">${esc(g.name)}</div>
+      <div class="grave-meta"><span>${loc}</span></div>
+      ${hijri}
+    </div>
+    <span class="chev">${I.forward(16)}</span>
+  </div>`;
+}
+
+let searchTO=null;
+async function doSearch(){
+  const q=(document.getElementById('searchInput')?.value||'').trim();
+  const body=document.getElementById('searchBody'); if(!body)return;
+  if(!q){ body.innerHTML=`<div class="empty" style="padding:40px 24px"><div class="ico">${I.search(22)}</div><h4>ابحث عن متوفى</h4><p>اكتب الاسم الكامل أو الاسم الأول</p></div>`; return; }
+  body.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">${'<div class="skel" style="height:68px;border-radius:14px"></div>'.repeat(4)}</div>`;
+  const d=await api('/api/search?q='+encodeURIComponent(q));
+  const items=d.results||[];
+  if(items.length===0){ body.innerHTML=`<div class="empty"><div class="ico">${I.search(22)}</div><h4>لا توجد نتائج</h4><p>جرّب اسماً آخر أو تأكّد من الإملاء.</p></div>`; return; }
+  body.innerHTML=`<div style="font-size:12px;color:var(--muted);padding:0 4px 8px">${items.length} نتيجة</div><div style="display:flex;flex-direction:column;gap:8px">${items.map(graveCard).join('')}</div>`;
+}
+
+// ---- Detail Bottom Sheet ----
+async function openDetail(id){
+  let sheet=document.getElementById('detailSheet');
+  if(!sheet){
+    const wrap=document.createElement('div');
+    wrap.innerHTML=`<div class="sheet-scrim" id="sheetScrim" onclick="closeDetail()"></div>
+      <div class="sheet" id="detailSheet"><div class="sheet-grab"></div>
+        <div class="sheet-head"><span style="font-size:12px;color:var(--muted)">تفاصيل المتوفى</span>
+        <button class="appbar-icon" style="width:32px;height:32px;color:var(--muted)" onclick="closeDetail()">${I.close(18)}</button></div>
+        <div class="sheet-body" id="detailBody"></div>
+        <div class="sheet-actions" id="detailActions"></div>
+      </div>`;
+    document.getElementById('app').appendChild(wrap);
+    sheet=document.getElementById('detailSheet');
+  }
+  document.getElementById('detailBody').innerHTML=`<div class="spinner-wrap" style="display:flex;justify-content:center;padding:40px"><div class="skel" style="width:72px;height:72px;border-radius:20px"></div></div>`;
+  document.getElementById('detailActions').innerHTML='';
+  document.getElementById('sheetScrim').classList.add('open');
+  sheet.classList.add('open');
+  const g=await api('/api/grave/'+id);
+  if(g.error){ document.getElementById('detailBody').innerHTML=`<div class="empty"><div class="ico">${I.alert(22)}</div><h4>${esc(g.error)}</h4></div>`; return; }
+  renderDetail(g);
+}
+function renderDetail(g){
+  const f=g.gender==='انثى';
+  const mapsUrl=(g.latitude&&g.longitude)?`https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`:null;
+  const portrait = g.photo_url
+    ? `<div class="detail-portrait ${f?'female':''}" style="overflow:hidden;padding:0"><img src="${esc(g.photo_url)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
+    : `<div class="detail-portrait ${f?'female':''}">${f?I.arch(36):I.grave(36)}</div>`;
+  document.getElementById('detailBody').innerHTML=`
+    <div class="detail-hero">
+      ${portrait}
+      <h2 class="detail-name">${esc(g.name)}</h2>
+      <div class="detail-rahima">إنا لله وإنا إليه راجعون</div>
+    </div>
+    <div class="location-grid">
+      <div class="loc-cell"><span class="lbl">المنطقة</span><span class="val">${esc(g.section||'-')}</span></div>
+      <div class="loc-cell"><span class="lbl">الصف</span><span class="val">${g.row_number||'-'}</span></div>
+      <div class="loc-cell"><span class="lbl">القبر</span><span class="val">${g.grave_number||'-'}</span></div>
+    </div>
+    <div style="padding:16px 18px 0">
+      ${g.death_date_hijri||g.death_date_gregorian?`<div class="meta-row"><div class="ico">${I.calendar(18)}</div><div style="flex:1"><span class="k">تاريخ الوفاة</span>${g.death_date_hijri?`<span class="v">${esc(fmtDate(g.death_date_hijri))} هـ</span>`:''}${g.death_date_gregorian?`<span class="k" style="margin-top:2px">${esc(fmtDate(g.death_date_gregorian))} م</span>`:''}</div></div>`:''}
+      ${g.death_day?`<div class="meta-row"><div class="ico">${I.clock(18)}</div><div style="flex:1"><span class="k">يوم الوفاة</span><span class="v">${esc(g.death_day)}</span></div></div>`:''}
+      <div class="meta-actions">
+        <button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="readFatiha()">${I.beads(15)} الفاتحة</button>
+        <button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="shareGrave(${g.id})">${I.share(15)} مشاركة</button>
+        <button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--danger)" onclick="toast('استخدم زر الإبلاغ في الموقع')">${I.flag(15)} إبلاغ</button>
+      </div>
+    </div>`;
+  const _navWrap = document.getElementById('detailActions');
+  if(mapsUrl){
+    _navWrap.innerHTML = `<button class="btn btn-primary" id="navToGrave">${I.nav(18)} توجّه إلى القبر</button>`;
+    document.getElementById('navToGrave').addEventListener('click', ()=>openExt(mapsUrl));
+  } else {
+    _navWrap.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;padding:6px">📍 الموقع غير متوفر بعد</div>`;
+  }
+}
+function closeDetail(){ document.getElementById('detailSheet')?.classList.remove('open'); document.getElementById('sheetScrim')?.classList.remove('open'); }
+function readFatiha(){ toast('🤲 اللهم ارحم موتانا وموتى المسلمين'); }
+async function shareGrave(id){
+  const url=location.origin+'/grave/'+id;
+  if(window.SafwaNative){const r=await window.SafwaNative.share({title:'مقبرة صفوى',text:'موقع قبر في مقبرة صفوى',url});if(r.copied)toast('✅ تم نسخ الرابط');}
+  else if(navigator.share){navigator.share({url,title:'مقبرة صفوى'}).catch(()=>{});}
+  else{navigator.clipboard.writeText(url).then(()=>toast('✅ تم نسخ الرابط'));}
+}
+function openExt(url){ const abs=/^[a-z][a-z0-9+.\-]*:/i.test(url)?url:new URL(url,location.href).href; if(window.SafwaNative&&window.SafwaNative.isNative){window.SafwaNative.openExternal(abs);}else{window.open(abs,'_blank','noopener');} }
+
+// ---- Map ----
+function renderMap(){
+  return `<div class="screen no-safe">
+    <iframe src="/map.html?embed=1" style="width:100%;height:100%;border:0;display:block"></iframe>
+    <button class="appbar-icon" style="position:absolute;top:calc(10px + var(--safe-top));right:12px;background:#fff;box-shadow:var(--sh-2);z-index:20" onclick="go('home')">${I.back(20)}</button>
+  </div>`;
+}
+
+// ---- Announcements ----
+function renderAnnouncements(){
+  const list=(state.announcements===null)
+    ? '<div class="skel" style="height:120px;border-radius:14px"></div>'.repeat(3)
+    : (state.announcements.length===0
+      ? `<div class="empty"><div class="ico">${I.heart(22)}</div><h4>لا يوجد إعلانات حالياً</h4><p>سيتم عرض إعلانات الوفاة هنا عند ورودها</p></div>`
+      : state.announcements.map(a=>annCard(a,false)).join(''));
+  return `<div class="screen">
+    ${appbar('إعلانات الوفاة','آخر التحديثات')}
+    <div class="screen-body" style="padding:12px 16px 16px">
+      <div style="display:flex;flex-direction:column;gap:12px">${list}</div>
+    </div>
+  </div>`;
+}
+
+// ---- Photos (gallery — uses grave photos / facility placeholders) ----
+function renderPhotos(){
+  const tiles=['t2','t3','t4','t5','t6',''];
+  const labels=['المدخل الرئيسي','المغتسل','المنطقة أ','مصلى الجنائز','البوابة الشرقية','ساحة الانتظار'];
+  return `<div class="screen no-nav">
+    ${appbar('مكتبة الصور','مرافق المقبرة',{back:true,noBell:true})}
+    <div class="screen-body">
+      <div class="empty" style="padding:24px 24px 8px"><p>صور مرافق المقبرة (قيد الإضافة من الإدارة)</p></div>
+      <div class="photo-grid">
+        ${labels.map((l,i)=>`<div class="photo-tile ${tiles[i]} ${i===0?'large':''}">${I.image(24)}<div class="ph-label">${esc(l)}</div></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---- Contacts ----
+const CONTACTS=[
+  {name:'جمعية الفردوس الخيرية',sub:'الإشراف على المقبرة',phone:'013 000 0000',ico:'mosque',wa:true},
+  {name:'طوارئ الدفن (24 ساعة)',sub:'تنسيق مواعيد الدفن',phone:'05X XXX XXXX',ico:'bell',wa:true,urgent:true},
+  {name:'بلدية صفوى',sub:'التراخيص والأنظمة',phone:'013 000 0000',ico:'shield',wa:false},
+];
+function renderContacts(){
+  const ico={shield:I.shield(20),users:I.users(20),bell:I.bell(20),mosque:I.mosque(20)};
+  return `<div class="screen no-nav">
+    ${appbar('أرقام التواصل','جهات الاتصال الرسمية',{back:true,noBell:true})}
+    <div class="screen-body" style="padding:12px 16px 16px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${CONTACTS.map(c=>`<div class="contact-card">
+          <div class="contact-ico" ${c.urgent?'style="background:#FEE2E2;color:var(--danger)"':''}>${ico[c.ico]}</div>
+          <div class="contact-body"><h4 class="contact-name">${esc(c.name)}</h4><div style="font-size:11px;color:var(--muted-2);margin-bottom:2px">${esc(c.sub)}</div><div class="contact-num">${esc(c.phone)}</div></div>
+          <div class="contact-actions">
+            ${c.wa?`<button class="contact-btn wa" onclick="openExt('https://wa.me/')">${I.whatsapp(18)}</button>`:''}
+            <button class="contact-btn" onclick="openExt('tel:${c.phone.replace(/\\s/g,'')}')">${I.phone(18)}</button>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div style="margin-top:16px;background:var(--bg-2);border:1px dashed var(--line);border-radius:14px;padding:12px;font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:flex-start">
+        ${I.info(16)}<span>للحالات الطارئة وقت الدفن، يرجى التواصل برقم الطوارئ المباشر — متاح 24 ساعة.</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---- More ----
+function renderMore(){
+  return `<div class="screen">
+    ${appbar('المزيد','',{noBell:true})}
+    <div class="screen-body" style="padding:8px 16px 24px">
+      <div class="list-group-h">معلومات المقبرة</div>
+      <div class="list-group">
+        <div class="list-row" onclick="go('announcements')"><div class="ico">${I.megaphone(18)}</div><div class="lbl">إعلانات الوفاة</div><span class="arrow">${I.forward(16)}</span></div>
+        <div class="list-row" onclick="openExt('https://maps.app.goo.gl/t7ZYj8wxZro1UCdz6')"><div class="ico">${I.pin(18)}</div><div class="lbl">موقع المقبرة على الخريطة</div><span class="arrow">${I.forward(16)}</span></div>
+        <div class="list-row" onclick="showDuaa()"><div class="ico gold">${I.beads(18)}</div><div class="lbl">دعاء أهل القبور</div><span class="arrow">${I.forward(16)}</span></div>
+      </div>
+      <div class="list-group-h">التطبيق</div>
+      <div class="list-group">
+        <div class="list-row" onclick="onBell()"><div class="ico">${I.bell(18)}</div><div class="lbl">تفعيل الإشعارات</div><span class="arrow">${I.forward(16)}</span></div>
+        <div class="list-row" onclick="openExt('/privacy')"><div class="ico">${I.shield(18)}</div><div class="lbl">سياسة الخصوصية</div><span class="arrow">${I.forward(16)}</span></div>
+      </div>
+      <div class="list-group-h">للموظفين والمتطوعين</div>
+      <div class="list-group">
+        <div class="list-row" onclick="openExt('https://safwa-cemetery.com/login.html')"><div class="ico" style="background:var(--bg-2);color:var(--muted)">${I.lock(18)}</div><div class="lbl" style="color:var(--muted)">دخول الموظفين والإدارة</div><span class="arrow">${I.forward(16)}</span></div>
+      </div>
+      <div style="text-align:center;margin-top:22px;font-size:11px;color:var(--muted-2)">الإصدار 2.0.0 · مقبرة صفوى</div>
+    </div>
+  </div>`;
+}
+function showDuaa(){
+  toast('السلام على أهل لا إله إلا الله 🤲');
+}
+
+// ---- Bottom Nav ----
+function bottomNav(){
+  const items=[['home','بحث',I.search(20)],['map','خريطة',I.map(20)],['announcements','إعلانات',I.megaphone(20)],['more','المزيد',I.more(20)]];
+  return `<div class="bottom-nav">${items.map(([k,l,ic])=>`<button class="bottom-nav-item ${state.tab===k?'active':''}" onclick="go('${k}')"><div class="nv-ico">${ic}</div><span>${l}</span></button>`).join('')}</div>`;
+}
+
+// ============================================================
+//  Router
+// ============================================================
+const TABS=['home','map','announcements','more'];
+const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts};
+
+function render(){
+  const view=state.stack.length?state.stack[state.stack.length-1]:state.tab;
+  const showNav=TABS.includes(view)&&state.stack.length===0;
+  document.getElementById('app').innerHTML =
+    `<div id="screenHost">${(RENDER[view]||renderHome)()}</div>${showNav?bottomNav():''}`;
+  if(view==='home'){ startBanner(); }
+  if(view==='search'){ setTimeout(()=>{const si=document.getElementById('searchInput');if(si){si.focus();si.addEventListener('input',()=>{clearTimeout(searchTO);searchTO=setTimeout(doSearch,300);});si.addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});}},50); }
+}
+function go(tab){ state.stack=[]; state.tab=tab; closeDetail(); render(); }
+function push(view){ state.stack.push(view); render(); }
+function back(){ if(state.stack.length){state.stack.pop();render();} }
+window.go=go; window.push=push; window.back=back;
+window.openDetail=openDetail; window.closeDetail=closeDetail; window.doSearch=doSearch;
+window.shareGrave=shareGrave; window.readFatiha=readFatiha; window.openExt=openExt;
+window.onBell=onBell; window.showDuaa=showDuaa; window.toast=toast;
+
+// ============================================================
+//  Push (native)
+// ============================================================
+async function onBell(){
+  const btn=document.getElementById('bellBtn');
+  if(window.SafwaNative&&window.SafwaNative.isNative){
+    toast('⏳ جاري تفعيل الإشعارات...');
+    const r=await window.SafwaNative.registerForPush();
+    if(r.success){ btn?.classList.add('active'); toast('✅ تم تفعيل الإشعارات'); }
+    else toast('❌ '+(r.error||'تعذّر التفعيل'));
+  } else { toast('🔔 الإشعارات متاحة في تطبيق الجوال'); }
+}
+if(window.SafwaNative&&window.SafwaNative.isNative){
+  window.SafwaNative.setupPushListeners((n)=>toast('🔔 '+(n.title||'إشعار جديد')));
+}
+
+// ============================================================
+//  Data loading + Init
+// ============================================================
+async function loadData(){
+  // Announcements
+  const ann=await api('/api/announcements');
+  state.announcements=ann.results||[];
+  // Banner content (admin-controlled) — matches website fields (public-content.js)
+  const pc=await api('/api/public-content');
+  const slides=[];
+  if(pc&&!pc.error){
+    // Notice (if enabled) shown first as a highlighted slide
+    if(pc.notice_enabled==='1'&&pc.notice_text&&pc.notice_text.trim()){
+      slides.push({label:'تنبيه',type:pc.notice_type==='urgent'?'maintenance':'announcement',text:pc.notice_text.trim()});
     }
-}, 100);
+    // Top banner items: newline-separated, each non-empty line is its own slide
+    if(pc.top_banner_items){
+      pc.top_banner_items.split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>slides.push({label:'',type:'ayah',text:t}));
+    }
+  }
+  state.banner=slides.length?slides:null;
+  // re-render current view if home/announcements
+  const view=state.stack.length?state.stack[state.stack.length-1]:state.tab;
+  if(view==='home'||view==='announcements') render();
+}
+
+// initial render + splash
+document.getElementById('app').innerHTML=`<div class="splash"><div class="crest">${I.crest(56,'#D4A93A')}</div><h1>مقبرة صفوى</h1><div class="sub">دليل أهالي صفوى لزيارة المتوفين</div><div class="loader">جارٍ التحميل…</div></div>`;
+setTimeout(()=>{
+  render();
+  loadData();
+  if(window.SafwaNative&&window.SafwaNative.isNative) setTimeout(()=>window.SafwaNative.hideSplash&&window.SafwaNative.hideSplash(),300);
+}, 1400);
 </script>
 </body>
 </html>

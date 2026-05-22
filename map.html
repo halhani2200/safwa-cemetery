@@ -154,7 +154,7 @@ let currentUser = null;
 
 async function checkAuth() {
     try {
-        const r = await fetch('/api/auth/me');
+        const r = await fetch((window.API_BASE || '') + '/api/auth/me');
         const d = await r.json();
         if (d.authenticated && (d.user.role === 'admin' || d.user.role === 'staff')) {
             currentUser = d.user;
@@ -195,7 +195,7 @@ function showHint(text, duration = 4000) {
 
 async function loadGraves() {
     try {
-        const r = await fetch('/api/graves');
+        const r = await fetch((window.API_BASE || '') + '/api/graves');
         const data = await r.json();
         allGraves = (data.results || []).filter(g => g.latitude && g.longitude);
         document.getElementById('gravesCount').textContent = allGraves.length;
@@ -229,7 +229,7 @@ function plotMarkers() {
             grave.latitude = newLatLng.lat;
             grave.longitude = newLatLng.lng;
             try {
-                const r = await fetch(`/api/grave/${g.id}`, {
+                const r = await fetch((window.API_BASE || '') + `/api/grave/${g.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(grave)
@@ -314,7 +314,7 @@ function doSearch(q) {
     resultsPanel.innerHTML = matches.slice(0, 30).map(g => `
         <div class="search-result-row" onclick="focusGrave(${g.id})">
             <strong>${escapeHtml(g.name)}</strong>
-            ${g.grave_reference || ''} ${g.death_date_gregorian ? '· ' + g.death_date_gregorian : ''}
+            ${escapeHtml(g.grave_reference || '')} ${g.death_date_gregorian ? '· ' + escapeHtml(g.death_date_gregorian) : ''}
         </div>
     `).join('');
     resultsPanel.classList.add('show');

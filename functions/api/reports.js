@@ -20,6 +20,6 @@ export async function onRequestGet(context) {
         `).all();
         return jsonResponse({ count: result.results.length, results: result.results });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

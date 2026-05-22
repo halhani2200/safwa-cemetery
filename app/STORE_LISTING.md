@@ -59,7 +59,7 @@
 
 ---
 
-**التطبيق يحتوي حالياً على ١٨٧ قبراً موثّقاً بإحداثيات GPS دقيقة في المنطقة (أ) من المقبرة، ويُحدَّث باستمرار مع كل وفاة جديدة.**
+**التطبيق يحتوي حالياً على أكثر من ٢١٠ قبر موثّق بإحداثيات GPS دقيقة في منطقتين (أ وب) من المقبرة، ويُحدَّث باستمرار مع كل وفاة جديدة.**
 
 **نطاق المشروع:** مقبرة صفوى، المنطقة الشرقية، المملكة العربية السعودية.
 
@@ -96,7 +96,7 @@ Non-profit project under the supervision of Al-Firdous Society and Safwa Municip
 
 ---
 
-**Currently contains 187 documented graves with precise GPS coordinates in Section A of the cemetery, continuously updated with new additions.**
+**Currently contains 210+ documented graves with precise GPS coordinates across two sections (A and B) of the cemetery, continuously updated with new additions.**
 
 **Scope:** Safwa Cemetery, Eastern Province, Saudi Arabia.
 
@@ -226,3 +226,52 @@ https://safwa-cemetery.com/privacy
 الموقع الرسمي: https://safwa-cemetery.com
 سياسة الخصوصية: https://safwa-cemetery.com/privacy
 ```
+
+---
+
+## 15. 🍎 App Store Connect — حقول iOS الإضافية (جاهزة للنسخ)
+
+> آبل عندها حقول مو موجودة في Google Play (Subtitle, Promotional Text, App Privacy).
+
+**اللغة الأساسية:** العربية (Arabic) — وأضِف الإنجليزية كلغة ثانية.
+
+**اسم التطبيق (App Name — حد 30 حرف):** `مقبرة صفوى`  (10 أحرف ✓)
+
+**العنوان الفرعي (Subtitle — حد 30 حرف):** `دليل قبور أهالي صفوى`  (~20 حرف ✓)
+> بدائل: `ابحث وتوجّه لقبور أحبّتك` · `دليل زيارة مقبرة صفوى`
+
+**النص الترويجي (Promotional Text — حد 170 حرف، قابل للتحديث أي وقت):**
+```
+ابحث عن قبور المتوفين في مقبرة صفوى بالاسم، شاهد الموقع على الخريطة، واحصل على توجيه دقيق — مع إشعارات لإعلانات الوفاة. خدمة مجتمعية مجانية بلا إعلانات.
+```
+
+**الكلمات المفتاحية (Keywords — حد 100 حرف، فاصلة بلا مسافات):**
+```
+مقبرة,صفوى,قبور,متوفين,القطيف,الفردوس,مقابر,تعزية,وفاة,خريطة,grave,cemetery,Qatif
+```
+
+**التصنيف:** Primary = Reference (مرجعي) · Secondary = Lifestyle
+**الروابط:** Support = https://safwa-cemetery.com · Privacy = https://safwa-cemetery.com/privacy
+**تصنيف العمر:** 4+
+
+### خصوصية التطبيق (App Privacy — إلزامي في App Store Connect)
+- **Identifiers / Push Token:** يُجمع **فقط** لمن يفعّل الإشعارات → الغرض: App Functionality. **غير مرتبط بالهوية، وليس للتتبّع.**
+- **Usage Data:** عدّاد زيارات مجهول → Analytics، غير مرتبط بالهوية.
+- **لا** نجمع: اسم/إيميل/موقع المستخدم/جهات اتصال/بيانات مالية أو صحية. لا تسجيل دخول للزوار. الكاميرا/الموقع للموظفين فقط.
+- اختر: **"Data Not Used to Track You"**.
+
+### لقطات الشاشة (متطلب App Store الحالي)
+- **مطلوب:** آيفون **6.9 بوصة** (1290×2796) — 3 إلى 10 صور. (آبل تعيد استخدامها للأحجام الأصغر)
+- **iPad:** فقط لو فعّلنا دعمه — نقترح **iPhone فقط** بالبداية لتبسيط المراجعة.
+- الشاشات المقترحة: (1) الرئيسية بانر+بحث (2) نتيجة بحث بصور (3) تفاصيل متوفّى+زر توجّه (4) الخريطة بالأقمار الصناعية (5) إعلانات الوفاة.
+
+### ملاحظات المراجِع (Reviewer Notes — مهم لتفادي رفض القانون 4.2)
+```
+This is a native iOS app (built with Capacitor) for a non-profit community cemetery directory in Safwa, Saudi Arabia. It is NOT a repackaged website — it provides native value: push notifications for new death announcements, offline access to cached grave data, native share, and GPS/Maps directions to exact grave locations. Families use it on-site at the cemetery to locate graves.
+No login is required to browse or test. No in-app purchases, no ads, no user-to-user content. Camera/Location are used only by authorized staff inside a protected admin area to document graves.
+Website: https://safwa-cemetery.com | Privacy: https://safwa-cemetery.com/privacy
+```
+
+**أيقونة المتجر:** 1024×1024 PNG، **بدون شفافية وبدون حواف دائرية** (آبل تدوّرها تلقائياً). التصميم النهائي عندك.
+
+**بعد اعتماد آبل:** ننشئ التطبيق في App Store Connect (بنفس Bundle ID `com.safwacemetery.app`) → نضيف App Store Connect API key كـ GitHub Secrets للبناء الموقّع → نرفع build عبر TestFlight → نملأ الحقول أعلاه → Submit for Review.

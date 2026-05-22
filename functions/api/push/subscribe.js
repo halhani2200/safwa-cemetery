@@ -22,6 +22,6 @@ export async function onRequestPost(context) {
         `).bind(endpoint, keys.p256dh, keys.auth, ua, new Date().toISOString()).run();
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

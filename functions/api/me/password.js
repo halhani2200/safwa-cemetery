@@ -18,8 +18,8 @@ export async function onRequestPost(context) {
         const current = body.current_password || '';
         const newPass = body.new_password || '';
 
-        if (!newPass || newPass.length < 6) {
-            return jsonResponse({ error: 'كلمة المرور الجديدة قصيرة (6 أحرف على الأقل)' }, 400);
+        if (!newPass || newPass.length < 12) {
+            return jsonResponse({ error: 'كلمة المرور الجديدة قصيرة (12 حرفاً على الأقل)' }, 400);
         }
 
         const user = await env.DB.prepare(
@@ -42,6 +42,6 @@ export async function onRequestPost(context) {
 
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

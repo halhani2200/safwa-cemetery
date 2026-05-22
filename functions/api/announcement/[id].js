@@ -42,7 +42,7 @@ export async function onRequestPut(context) {
 
         return jsonResponse({ ok: true, push: pushResult });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -60,6 +60,6 @@ export async function onRequestDelete(context) {
         await logAudit(env, auth.user.id, 'delete', 'announcement', id, {}, request);
         return jsonResponse({ ok: true });
     } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
+        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

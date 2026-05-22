@@ -1,6 +1,6 @@
 // Service Worker for Safwa Cemetery — Push + Offline + App Shell Caching
 
-const CACHE_VERSION = 'safwa-v2-2026-05-20';
+const CACHE_VERSION = 'safwa-v3-2026-05-21';
 const APP_SHELL = [
     '/',
     '/index.html',
@@ -46,17 +46,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // API requests: network-first, fall back to cache
+    // Never cache API responses — may contain sensitive admin/staff data
     if (url.pathname.startsWith('/api/')) {
-        event.respondWith(
-            fetch(request)
-                .then((res) => {
-                    const copy = res.clone();
-                    caches.open(CACHE_VERSION).then((c) => c.put(request, copy)).catch(() => {});
-                    return res;
-                })
-                .catch(() => caches.match(request))
-        );
         return;
     }
 

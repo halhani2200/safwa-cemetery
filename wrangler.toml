@@ -14,3 +14,8 @@ database_id = "3fcb49cf-343e-4f13-8bb2-a1ac450af8a2"
 [[r2_buckets]]
 binding = "PHOTOS"
 bucket_name = "safwa-cemetery-photos"
+
+# Private bucket for sensitive report documents (IDs, burial permits) — NO public access.
+[[r2_buckets]]
+binding = "DOCS"
+bucket_name = "safwa-cemetery-docs"

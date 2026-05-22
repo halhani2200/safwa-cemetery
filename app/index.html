@@ -26,6 +26,55 @@ html,body{height:100%;margin:0;background:var(--bg,#F7F2E6)}
 .appbar-status{font-size:11px;opacity:.85;display:flex;align-items:center;gap:4px}
 .appbar-status .d{width:6px;height:6px;border-radius:50%;background:#86EFAC}
 .appbar-status .d.closed{background:#FCA5A5}
+/* On This Day card */
+.otd-card{background:linear-gradient(180deg,#ffffff,#FBF8F0);border:1px solid var(--line,#E7DCC4);border-radius:16px;padding:14px 14px 12px;box-shadow:var(--sh-1,0 2px 8px rgba(0,0,0,.05))}
+.otd-head{display:flex;align-items:center;gap:8px;color:var(--green,#0E4D3F);font-family:var(--font-display,inherit);font-weight:700;font-size:14px;margin-bottom:8px}
+.otd-head .otd-date{margin-inline-start:auto;font-weight:600;font-size:12px;color:var(--gold,#B8860B)}
+.otd-list{display:flex;flex-direction:column;gap:2px}
+.otd-row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:10px;cursor:pointer}
+.otd-row:active{background:var(--bg-2,#F3EEE2)}
+.otd-ico{width:34px;height:34px;border-radius:10px;background:#EAF1EE;color:var(--green,#0E4D3F);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.otd-ico.female{background:#F3E8FF;color:#6B21A8}
+.otd-name{font-size:14px;font-weight:600;color:var(--text,#1F2937);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.otd-empty{text-align:center;font-family:var(--font-display,inherit);color:var(--muted,#6B7280);font-size:14px;padding:10px 6px}
+.otd-fatiha{width:100%;margin-top:10px;background:var(--green,#0E4D3F);color:#fff;border:none;border-radius:12px;min-height:42px;font-family:inherit;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer}
+.otd-fatiha:active{opacity:.9}
+/* Death-report button + wizard */
+.report-btn{display:inline-flex;align-items:center;gap:5px;background:var(--gold,#B8860B);color:#fff;border:none;border-radius:999px;padding:7px 12px;font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.report-btn:active{opacity:.9}
+.rfield{margin-bottom:14px}
+.rfield label{display:block;font-size:13px;font-weight:600;color:var(--text,#1F2937);margin-bottom:6px}
+.rfield input,.rfield select{width:100%;height:48px;border-radius:14px;border:1px solid var(--line,#E2D9C5);background:#fff;padding:0 14px;font-size:14px;font-family:inherit;color:var(--text,#1F2937);outline:none;box-sizing:border-box}
+.rfield input:focus,.rfield select:focus{border-color:var(--green,#0E4D3F)}
+.rhint{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted,#6B7280);margin-top:6px}
+.rtile{display:flex;align-items:center;gap:12px;background:#fff;border:1px dashed var(--line,#E2D9C5);border-radius:14px;padding:14px;cursor:pointer}
+.rtile.up{background:var(--green-50,#EAF1EE);border-style:solid;border-color:var(--green,#0E4D3F)}
+.rtile-ic{width:44px;height:44px;border-radius:12px;background:var(--bg-2,#F3EEE2);color:var(--muted,#6B7280);display:grid;place-items:center;flex-shrink:0}
+.rtile.up .rtile-ic{background:var(--green,#0E4D3F);color:#fff}
+.rtile-t{font-size:14px;font-weight:600;color:var(--text,#1F2937)}
+.rtile-h{font-size:11.5px;color:var(--muted,#6B7280);margin-top:2px}
+.rprivacy{display:flex;align-items:flex-start;gap:10px;background:var(--green-50,#EAF1EE);border:1px solid rgba(14,77,63,.10);border-radius:14px;padding:12px 14px;margin-top:14px;font-size:12px;color:var(--green-dark,#08362C);line-height:1.65}
+.rprivacy b{font-weight:600}
+.rinfo{display:flex;align-items:flex-start;gap:8px;background:#FBF3DE;border:1px solid rgba(184,134,11,.15);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#7A5A0A;line-height:1.6}
+.rcontact{display:flex;align-items:center;gap:10px;background:var(--bg-2,#F3EEE2);border:1px solid var(--line,#E2D9C5);border-radius:12px;padding:10px 12px;margin-top:8px}
+.rcontact-ic{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--green,#0E4D3F);display:grid;place-items:center;flex-shrink:0}
+.rcontact-btn{width:36px;height:36px;border-radius:10px;border:none;background:var(--green,#0E4D3F);color:#fff;display:grid;place-items:center;cursor:pointer;flex-shrink:0}
+.btn-secondary{background:var(--bg-2,#F3EEE2);color:var(--text,#1F2937);border:1px solid var(--line,#E2D9C5)}
+/* Rich announcement card */
+.ann-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ann-rahima{font-family:var(--font-display,inherit);color:var(--gold,#B8860B);font-size:13px;font-weight:600}
+.ann-name{font-family:var(--font-display,inherit);font-size:17px;font-weight:700;color:var(--green,#0E4D3F);margin:0}
+.ann-sub{font-size:12px;color:var(--muted,#6B7280);margin:2px 0 10px}
+.ann-row{display:flex;gap:10px;padding:5px 0;font-size:13px;align-items:baseline}
+.ann-lbl{color:var(--muted,#6B7280);min-width:64px;flex-shrink:0;font-size:12px}
+.ann-val{color:var(--text,#1F2937);font-weight:500;flex:1}
+.ann-aza{background:var(--bg-2,#F7F2E6);border-radius:12px;padding:6px 12px;margin-top:8px}
+.ann-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.ann-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line,#E2D9C5);background:#fff;color:var(--text,#1F2937);border-radius:10px;padding:8px 12px;font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
+.ann-btn.primary{background:var(--green,#0E4D3F);color:#fff;border-color:var(--green,#0E4D3F)}
+.ann-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.ann-chip{border:1px solid var(--line,#E2D9C5);background:#fff;color:var(--muted,#6B7280);border-radius:999px;padding:7px 14px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ann-chip.on{background:var(--green,#0E4D3F);color:#fff;border-color:var(--green,#0E4D3F)}
 </style>
 </head>
 <body>
@@ -82,10 +131,13 @@ const esc = (s) => s==null?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 const fmtDate = (s) => { if(!s)return''; const p=String(s).trim().split(/[\/\-\\.]/); if(p.length!==3)return s; const[d,m,y]=p.map(x=>x.trim()); if(!/^\d+$/.test(d)||!/^\d+$/.test(m)||!/^\d+$/.test(y))return s; return `${d.padStart(2,'0')} / ${m.padStart(2,'0')} / ${y}`; };
 const timeAgo = (ts) => { if(!ts)return''; const d=new Date(ts),diff=(Date.now()-d.getTime())/1000; if(diff<60)return'الآن'; if(diff<3600)return Math.floor(diff/60)+' د'; if(diff<86400)return Math.floor(diff/3600)+' س'; if(diff<604800)return Math.floor(diff/86400)+' ي'; return d.toLocaleDateString('ar-EG'); };
 const isFresh = (ts) => ts && (Date.now()-new Date(ts).getTime())<86400000;
-async function api(path){ try{const r=await fetch(path);return await r.json();}catch(e){return{error:e.message};} }
+async function api(path){ try{const r=await fetch((window.API_BASE||'')+path);return await r.json();}catch(e){return{error:e.message};} }
 
 // ---------- App State ----------
-const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null };
+const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null };
+// Death-report entry is hidden from the public until staff review + real venue contacts are ready.
+// Enable for testing with /app/?report=1  (or localStorage safwa_report=1).
+window.REPORT_ENABLED = /[?&]report=1/.test(location.search) || (()=>{try{return localStorage.getItem('safwa_report')==='1';}catch(e){return false;}})();
 
 // ---------- Toast ----------
 function toast(msg, kind){
@@ -118,6 +170,28 @@ function appbar(title, sub, opts={}){
   </div>`;
 }
 
+// ---- On This Day ----
+function otdRow(g){
+  const f=g.gender==='انثى';
+  const ya=g.years_ago!=null?`<span style="color:var(--gold);font-size:12px;font-weight:600">منذ ${g.years_ago} سنة</span>`:'';
+  const greg=g.death_date_gregorian?`<span style="font-size:11px;color:var(--muted)">${esc(fmtDate(g.death_date_gregorian))}م</span>`:'';
+  return `<div class="otd-row" onclick="openDetail(${g.id})">
+    <div class="otd-ico ${f?'female':''}">${f?I.arch(18):I.grave(18)}</div>
+    <div style="flex:1;min-width:0"><div class="otd-name">${esc(g.name)}</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:2px">${ya}${greg}</div></div>
+    <span class="chev">${I.forward(15)}</span>
+  </div>`;
+}
+function onThisDayHtml(){
+  if(state.onThisDay===null) return `<div class="otd-card"><div class="otd-head">${I.beads(16)}<span>في مثل هذا اليوم</span></div><div class="skel" style="height:56px;border-radius:12px"></div></div>`;
+  const list=state.onThisDay;
+  const dateLabel=state.otdToday&&state.otdToday.label?`<span class="otd-date">${esc(state.otdToday.label)}</span>`:'';
+  if(list.length===0) return `<div class="otd-card"><div class="otd-head">${I.beads(16)}<span>في مثل هذا اليوم</span>${dateLabel}</div><div class="otd-empty">رحم الله موتانا وموتى المسلمين</div></div>`;
+  const rows=list.slice(0,3).map(otdRow).join('');
+  const more=list.length>3?`<div style="text-align:center;font-size:12px;color:var(--muted);padding-top:4px">و${list.length-3} آخرين رحمهم الله</div>`:'';
+  return `<div class="otd-card"><div class="otd-head">${I.beads(16)}<span>في مثل هذا اليوم</span>${dateLabel}</div><div class="otd-list">${rows}${more}</div><button class="otd-fatiha" onclick="readFatiha()">${I.beads(15)} قراءة الفاتحة لهم جميعاً</button></div>`;
+}
+
 // ---- Home ----
 function renderHome(){
   const open = visitStatus();
@@ -129,24 +203,30 @@ function renderHome(){
         : state.announcements.slice(0,2).map(a=>annCard(a,true)).join(''));
 
   return `<div class="screen">
-    ${appbar('مقبرة صفوى','السلام عليكم ورحمة الله')}
+    <div class="appbar">
+      <div class="appbar-logo">${I.crest(20,'currentColor')}</div>
+      <div class="appbar-title">مقبرة صفوى<span class="appbar-sub">السلام عليكم ورحمة الله</span></div>
+      ${window.REPORT_ENABLED?`<button class="report-btn" onclick="openReport()">${I.plus(14)}<span>إبلاغ وفاة</span></button>`:''}
+      <button class="appbar-icon" id="bellBtn" onclick="onBell()">${I.bell(20)}</button>
+    </div>
     <div class="screen-body" style="padding:12px 16px 16px">
       ${bannerHtml(slides)}
+      <div style="margin-top:14px"><div class="quick-row">
+        <button class="quick" onclick="go('map')"><div class="quick-ico">${I.map(20)}</div><div class="quick-label">خريطة المقبرة</div></button>
+        <button class="quick" onclick="push('contacts')"><div class="quick-ico gold">${I.phone(20)}</div><div class="quick-label">أرقام التواصل</div></button>
+        <button class="quick" onclick="push('photos')"><div class="quick-ico">${I.image(20)}</div><div class="quick-label">مكتبة الصور</div></button>
+      </div></div>
       <div style="margin-top:14px">
         <div class="search" onclick="push('search')">
           ${I.search(18)}
           <input placeholder="ابحث بالاسم، المنطقة، أو رقم القبر" readonly>
         </div>
       </div>
-      <div style="margin-top:14px"><div class="quick-row">
-        <button class="quick" onclick="go('map')"><div class="quick-ico">${I.map(20)}</div><div class="quick-label">خريطة المقبرة</div></button>
-        <button class="quick" onclick="push('contacts')"><div class="quick-ico gold">${I.phone(20)}</div><div class="quick-label">أرقام التواصل</div></button>
-        <button class="quick" onclick="push('photos')"><div class="quick-ico">${I.image(20)}</div><div class="quick-label">مكتبة الصور</div></button>
-      </div></div>
       <div style="margin-top:18px">
         <div class="section-h"><h3>آخر إعلانات الوفاة</h3><a onclick="go('announcements')">عرض الكل</a></div>
         <div style="display:flex;flex-direction:column;gap:10px">${annHtml}</div>
       </div>
+      <div style="margin-top:18px">${onThisDayHtml()}</div>
       <div style="margin-top:18px">
         <div class="section-h"><h3>أوقات الزيارة اليوم</h3></div>
         <div class="list-group"><div class="list-row" style="min-height:auto;padding:12px 14px">
@@ -196,13 +276,28 @@ function startBanner(){
 function annCard(a, brief){
   const fresh=isFresh(a.created_at);
   const name=a.deceased_name||a.name||'';
-  const kunya=a.kunya?` <span style="color:var(--gold);font-size:13px">${esc(a.kunya)}</span>`:'';
+  const fem=/المرحومة|الحاجة|الحاجه|السيدة|أنثى|انثى/.test(name);
+  const kunya=a.kunya?` <span style="color:var(--gold)">— ${esc(a.kunya)}</span>`:'';
+  const row=(lbl,val)=> val?`<div class="ann-row"><span class="ann-lbl">${lbl}</span><span class="ann-val">${esc(val)}</span></div>`:'';
+  let aza='';
+  if(a.condolence_men||a.condolence_women){
+    aza=`<div class="ann-aza">${a.condolence_men?`<div class="ann-row"><span class="ann-lbl">عزاء الرجال</span><span class="ann-val">${esc(a.condolence_men)}</span></div>`:''}${a.condolence_women?`<div class="ann-row"><span class="ann-lbl">عزاء النساء</span><span class="ann-val">${esc(a.condolence_women)}</span></div>`:''}</div>`;
+  }
+  const actions = brief?'':`<div class="ann-actions">
+      <button class="ann-btn primary" onclick="event.stopPropagation();readFatiha()">${I.beads(14)} الفاتحة</button>
+      <button class="ann-btn" data-name="${esc(name)}" onclick="event.stopPropagation();shareAnn(this)">${I.share(14)} مشاركة</button>
+      ${a.grave_id?`<button class="ann-btn" onclick="event.stopPropagation();openDetail(${a.grave_id})">${I.nav(14)} القبر</button>`:''}
+    </div>`;
   return `<div class="ann-card ${fresh?'new':''}" ${brief?'onclick="go(\'announcements\')"':''}>
-    <div class="ann-head"><h4 class="ann-name">${esc(name)}${kunya}</h4>${fresh?'<span class="ann-tag">جديد</span>':`<span style="font-size:11px;color:var(--muted)">${timeAgo(a.created_at)}</span>`}</div>
-    <div class="ann-rahima">إنا لله وإنا إليه راجعون</div>
-    ${a.message?`<div class="ann-detail"><span class="lbl">التفاصيل</span><span>${esc(a.message)}</span></div>`:''}
+    <div class="ann-top"><span class="ann-rahima">إنا لله وإنا إليه راجعون</span>${fresh?'<span class="ann-tag">جديد</span>':`<span style="font-size:11px;color:var(--muted)">${timeAgo(a.created_at)}</span>`}</div>
+    <h4 class="ann-name">${esc(name)}${kunya}</h4>
+    <div class="ann-sub">${fem?'رحمها الله وأسكنها فسيح جناته':'رحمه الله وأسكنه فسيح جناته'}</div>
+    ${row('الصلاة',a.funeral_info)}${row('الدفن',a.burial_info)}${aza}${(!brief&&a.message)?row('التفاصيل',a.message):''}
+    ${actions}
   </div>`;
 }
+function shareAnn(el){ const name=(el&&el.dataset&&el.dataset.name)||''; const url=location.origin; const text='إعلان وفاة — مقبرة صفوى:\n'+name+'\nإنا لله وإنا إليه راجعون'; if(window.SafwaNative){window.SafwaNative.share({title:'مقبرة صفوى',text,url});} else if(navigator.share){navigator.share({title:'مقبرة صفوى',text,url}).catch(()=>{});} else if(navigator.clipboard){navigator.clipboard.writeText(text+'\n'+url).then(()=>toast('✅ تم نسخ الإعلان'));} }
+window.shareAnn=shareAnn;
 
 // ---- Search ----
 function renderSearch(){
@@ -302,9 +397,13 @@ function renderDetail(g){
         <button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--danger)" onclick="toast('استخدم زر الإبلاغ في الموقع')">${I.flag(15)} إبلاغ</button>
       </div>
     </div>`;
-  document.getElementById('detailActions').innerHTML = mapsUrl
-    ? `<button class="btn btn-primary" onclick="openExt('${mapsUrl}')">${I.nav(18)} توجّه إلى القبر</button>`
-    : `<div style="text-align:center;color:var(--muted);font-size:13px;padding:6px">📍 الموقع غير متوفر بعد</div>`;
+  const _navWrap = document.getElementById('detailActions');
+  if(mapsUrl){
+    _navWrap.innerHTML = `<button class="btn btn-primary" id="navToGrave">${I.nav(18)} توجّه إلى القبر</button>`;
+    document.getElementById('navToGrave').addEventListener('click', ()=>openExt(mapsUrl));
+  } else {
+    _navWrap.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;padding:6px">📍 الموقع غير متوفر بعد</div>`;
+  }
 }
 function closeDetail(){ document.getElementById('detailSheet')?.classList.remove('open'); document.getElementById('sheetScrim')?.classList.remove('open'); }
 function readFatiha(){ toast('🤲 اللهم ارحم موتانا وموتى المسلمين'); }
@@ -325,16 +424,31 @@ function renderMap(){
 }
 
 // ---- Announcements ----
+function annFiltered(){
+  let list=state.announcements||[];
+  const f=state.annFilter||'all';
+  if(f!=='all'){
+    const cut=Date.now()-(f==='week'?7:30)*86400000;
+    list=list.filter(a=>{ if(!a.created_at)return true; const t=new Date(a.created_at.replace(' ','T')+'Z').getTime(); return isNaN(t)||t>=cut; });
+  }
+  return list;
+}
+function setAnnFilter(f){ state.annFilter=f; render(); }
+window.setAnnFilter=setAnnFilter;
 function renderAnnouncements(){
-  const list=(state.announcements===null)
-    ? '<div class="skel" style="height:120px;border-radius:14px"></div>'.repeat(3)
-    : (state.announcements.length===0
-      ? `<div class="empty"><div class="ico">${I.heart(22)}</div><h4>لا يوجد إعلانات حالياً</h4><p>سيتم عرض إعلانات الوفاة هنا عند ورودها</p></div>`
-      : state.announcements.map(a=>annCard(a,false)).join(''));
+  const chips=[['all','الكل'],['week','هذا الأسبوع'],['month','هذا الشهر']];
+  const cur=state.annFilter||'all';
+  const chipsHtml=`<div class="ann-chips">${chips.map(([k,l])=>`<button class="ann-chip ${cur===k?'on':''}" onclick="setAnnFilter('${k}')">${l}</button>`).join('')}</div>`;
+  let body;
+  if(state.announcements===null) body='<div class="skel" style="height:150px;border-radius:14px"></div>'.repeat(2);
+  else { const list=annFiltered(); body = list.length===0
+      ? `<div class="empty"><div class="ico">${I.heart(22)}</div><h4>لا يوجد إعلانات</h4><p>سيتم عرض إعلانات الوفاة هنا عند ورودها</p></div>`
+      : list.map(a=>annCard(a,false)).join(''); }
   return `<div class="screen">
     ${appbar('إعلانات الوفاة','آخر التحديثات')}
     <div class="screen-body" style="padding:12px 16px 16px">
-      <div style="display:flex;flex-direction:column;gap:12px">${list}</div>
+      ${chipsHtml}
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">${body}</div>
     </div>
   </div>`;
 }
@@ -400,7 +514,7 @@ function renderMore(){
       </div>
       <div class="list-group-h">للموظفين والمتطوعين</div>
       <div class="list-group">
-        <div class="list-row" onclick="location.href='/login.html'"><div class="ico" style="background:var(--bg-2);color:var(--muted)">${I.lock(18)}</div><div class="lbl" style="color:var(--muted)">دخول الموظفين والإدارة</div><span class="arrow">${I.forward(16)}</span></div>
+        <div class="list-row" onclick="openExt('https://safwa-cemetery.com/login.html')"><div class="ico" style="background:var(--bg-2);color:var(--muted)">${I.lock(18)}</div><div class="lbl" style="color:var(--muted)">دخول الموظفين والإدارة</div><span class="arrow">${I.forward(16)}</span></div>
       </div>
       <div style="text-align:center;margin-top:22px;font-size:11px;color:var(--muted-2)">الإصدار 2.0.0 · مقبرة صفوى</div>
     </div>
@@ -417,10 +531,115 @@ function bottomNav(){
 }
 
 // ============================================================
+//  Death Report Wizard (إبلاغ عن حالة وفاة)
+// ============================================================
+function openReport(){ state.reportStep=1; state.reportData={reporter_relation:'ابن', deceased_gender:'ذكر', files:{}}; state.reportRef=null; if(!state.hosseiniyas) loadHosseiniyas(); push('report'); }
+async function loadHosseiniyas(){ const r=await api('/api/hosseiniyas'); state.hosseiniyas=r.results||[]; if(state.stack[state.stack.length-1]==='report'&&state.reportStep===4) render(); }
+function rField(label,inputHtml,hint){ return `<div class="rfield"><label>${esc(label)}</label>${inputHtml}${hint?`<div class="rhint">${hint}</div>`:''}</div>`; }
+function reportChrome(step,title,sub,body,footer){
+  return `<div class="screen no-nav">
+    <div class="appbar cream" style="flex-direction:column;align-items:stretch;gap:10px;padding:10px 14px 12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="appbar-icon" onclick="reportBack()">${I.back(20)}</button>
+        <div style="flex:1;text-align:center;font-size:12px;color:var(--muted);font-weight:500">بلاغ وفاة — الخطوة ${step} من 4</div>
+        <button class="appbar-icon" style="color:var(--muted)" onclick="go('home')">${I.close(18)}</button>
+      </div>
+      <div style="height:3px;background:var(--bg-2,#eee);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--green,#0E4D3F);width:${step/4*100}%;transition:width .3s"></div></div>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <h2 style="font-family:var(--font-display,inherit);font-size:20px;font-weight:600;color:var(--text,#1F2937);margin:4px 0 6px;line-height:1.4">${esc(title)}</h2>
+      ${sub?`<p style="font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.6">${esc(sub)}</p>`:''}
+      ${body}
+    </div>
+    <div style="padding:12px 16px calc(12px + var(--safe-bottom,0px));border-top:1px solid var(--line,#eee);background:#fff">${footer}</div>
+  </div>`;
+}
+function renderReportStep1(){
+  const d=state.reportData, rels=['ابن','ابنة','أخ','أخت','زوج/زوجة','قريب'];
+  return reportChrome(1,'بياناتك','نحتاج معلومات المُبلِّغ لنتواصل معك بشأن البلاغ — تبقى خاصة.',
+    `${rField('اسمك الكامل',`<input id="rf_rname" value="${esc(d.reporter_name||'')}" placeholder="الاسم الثلاثي">`)}
+     ${rField('صلة القرابة بالمتوفّى',`<select id="rf_rel">${rels.map(r=>`<option ${d.reporter_relation===r?'selected':''}>${r}</option>`).join('')}</select>`)}
+     ${rField('رقم الهوية الوطنية',`<input id="rf_rnid" value="${esc(d.reporter_nid||'')}" placeholder="1XXXXXXXXX" inputmode="numeric">`,`${I.lock(11)} رقم هويتك خاص ولا يُعرض إلا للموظف.`)}
+     ${rField('رقم الجوال للتواصل',`<input id="rf_rphone" value="${esc(d.reporter_phone||'')}" placeholder="05XXXXXXXX" inputmode="numeric">`)}`,
+    `<button class="btn btn-primary" onclick="reportNext()">متابعة</button>`);
+}
+function renderReportStep2(){
+  const d=state.reportData, male=d.deceased_gender!=='انثى';
+  const gBtn=(g,lbl)=>`<button type="button" onclick="reportGender('${g}')" style="height:48px;border-radius:14px;border:1px solid ${(g==='ذكر')===male?'var(--green,#0E4D3F)':'var(--line,#ddd)'};background:${(g==='ذكر')===male?'var(--green-50,#EAF1EE)':'#fff'};color:${(g==='ذكر')===male?'var(--green,#0E4D3F)':'var(--muted,#6B7280)'};font-weight:600;font-size:14px;cursor:pointer">${lbl}</button>`;
+  return reportChrome(2,'بيانات المتوفّى','تقبّل الله منكم — هذه المعلومات تساعدنا في الترتيب.',
+    `${rField('اسم المتوفّى الكامل',`<input id="rf_dname" value="${esc(d.deceased_name||'')}" placeholder="الاسم الكامل">`)}
+     ${rField('الجنس',`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${gBtn('ذكر','ذكر')}${gBtn('انثى','أنثى')}</div>`)}
+     ${rField('تاريخ الوفاة (هجري)',`<input id="rf_dhijri" value="${esc(d.death_date_hijri||'')}" placeholder="مثال: 22 شوال 1447هـ">`)}
+     ${rField('العمر عند الوفاة (اختياري)',`<input id="rf_dage" value="${esc(d.deceased_age||'')}" placeholder="—" inputmode="numeric">`)}`,
+    `<div style="display:flex;gap:8px"><button class="btn btn-secondary" onclick="reportBack()" style="flex:1">السابق</button><button class="btn btn-primary" onclick="reportNext()" style="flex:1.4">متابعة</button></div>`);
+}
+function renderReportStep3(){
+  const d=state.reportData;
+  const tile=(kind,label,hint)=>{ const up=!!d.files[kind]; return `<div class="rtile ${up?'up':''}" onclick="reportPick('${kind}')">
+    <div class="rtile-ic">${up?I.check(20):I.image(20)}</div>
+    <div style="flex:1;min-width:0"><div class="rtile-t">${esc(label)}${up?'':' <span style="color:var(--danger,#DC2626);font-weight:400;font-size:12px">*</span>'}</div>
+    <div class="rtile-h">${up?'تم الرفع · '+esc(d.files[kind].name||'ملف'):esc(hint)}</div></div>
+    <div style="color:var(--green,#0E4D3F);font-size:12px;font-weight:600;white-space:nowrap">${up?'تغيير':'＋ ارفع'}</div></div>`; };
+  return reportChrome(3,'المستندات','نحتاج صورتين فقط — مستنداتك محمية تماماً.',
+    `<div style="display:flex;flex-direction:column;gap:10px">
+       ${tile('permit','تصريح الدفن','من البلدية / المستشفى — اضغط لالتقاط أو رفع صورة')}
+       ${tile('id','هوية المتوفّى','بطاقة الأحوال — صورة واضحة')}
+     </div>
+     <div class="rprivacy">${I.shield(18)}<div><b>مستنداتك خاصة ومحمية.</b> لا تظهر للزوار أو في أي مكان عام — فقط الموظف المعتمد يستطيع مراجعتها للتحقق من البلاغ.</div></div>`,
+    `<div style="display:flex;gap:8px"><button class="btn btn-secondary" onclick="reportBack()" style="flex:1">السابق</button><button class="btn btn-primary" onclick="reportNext()" style="flex:1.4">متابعة</button></div>`);
+}
+function renderReportStep4(){
+  const d=state.reportData, hs=state.hosseiniyas||[];
+  const men=hs.filter(h=>h.for_gender==='m'||h.for_gender==='both'), women=hs.filter(h=>h.for_gender==='f'||h.for_gender==='both');
+  const sel=(id,val,opts)=>`<select id="${id}" onchange="reportVenue()"><option value="">— اختر —</option>${opts.map(o=>`<option value="${o.id}" ${String(val)===String(o.id)?'selected':''}>${esc(o.name)}${o.area?' — '+esc(o.area):''}</option>`).join('')}</select>`;
+  const reveal=(val)=>{ const h=hs.find(x=>String(x.id)===String(val)); if(!h)return''; return `<div class="rcontact"><div class="rcontact-ic">${I.user(16)}</div><div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--muted)">المسؤول</div><div style="font-size:13px;font-weight:600">${esc(h.incharge||'يُحدّد لاحقاً')}</div><div style="font-size:12px;color:var(--muted);direction:ltr;text-align:right">${esc(h.phone||'الرقم يُضاف قريباً')}</div></div>${h.phone?`<button class="rcontact-btn" onclick="event.stopPropagation();openExt('tel:${esc((h.phone||'').replace(/\\s/g,''))}')">${I.phone(16)}</button>`:''}</div>`; };
+  return reportChrome(4,'أماكن العزاء','اختر من القائمة لتحصل على رقم المسؤول وتتنسّق معه — تواصلٌ مباشر، لا أكثر.',
+    `<div class="rinfo">${I.info(15)}<span>هذه القائمة دليلٌ للتواصل فقط — ترتيب العزاء يبقى بينك وبين الحسينية مباشرةً.</span></div>
+     ${rField('مكان عزاء الرجال',sel('rf_azamen',d.aza_men,men))}${reveal(d.aza_men)}
+     ${rField('مكان عزاء النساء',sel('rf_azawomen',d.aza_women,women))}${reveal(d.aza_women)}`,
+    `<div style="display:flex;gap:8px"><button class="btn btn-secondary" onclick="reportBack()" style="flex:1">السابق</button><button class="btn btn-primary" onclick="reportSubmit()" style="flex:1.4">إرسال البلاغ</button></div>`);
+}
+function renderReportSuccess(){
+  return `<div class="screen no-nav"><div class="screen-body" style="padding:40px 24px 24px;display:flex;flex-direction:column;align-items:center;text-align:center">
+    <div style="width:80px;height:80px;border-radius:24px;background:var(--green,#0E4D3F);color:#fff;display:grid;place-items:center;box-shadow:0 12px 28px rgba(14,77,63,.25);margin:32px 0 22px">${I.check(36)}</div>
+    <h2 style="font-family:var(--font-display,inherit);font-size:22px;font-weight:600;color:var(--green-dark,#08362C);margin:0">تم استلام بلاغك</h2>
+    <div style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.7;max-width:280px">عظّم الله أجركم وأحسن عزاءكم.<br>سيتواصل معك الموظف خلال ساعات قليلة.</div>
+    ${state.reportRef?`<div style="margin-top:20px;padding:12px 18px;background:#fff;border:1px solid var(--line,#eee);border-radius:14px"><span style="font-size:12px;color:var(--muted)">رقم البلاغ</span><div style="font-size:18px;font-weight:700;color:var(--green,#0E4D3F);direction:ltr">${esc(state.reportRef)}</div></div>`:''}
+    <button class="btn btn-primary" style="margin-top:26px;max-width:240px" onclick="go('home')">العودة للرئيسية</button>
+  </div></div>`;
+}
+function renderReport(){ if(state.reportStep==='done')return renderReportSuccess(); if(state.reportStep===2)return renderReportStep2(); if(state.reportStep===3)return renderReportStep3(); if(state.reportStep===4)return renderReportStep4(); return renderReportStep1(); }
+function reportCapture(s){ const g=id=>document.getElementById(id),d=state.reportData;
+  if(s===1){ if(g('rf_rname'))d.reporter_name=g('rf_rname').value.trim(); if(g('rf_rel'))d.reporter_relation=g('rf_rel').value; if(g('rf_rnid'))d.reporter_nid=g('rf_rnid').value.trim(); if(g('rf_rphone'))d.reporter_phone=g('rf_rphone').value.trim(); }
+  else if(s===2){ if(g('rf_dname'))d.deceased_name=g('rf_dname').value.trim(); if(g('rf_dhijri'))d.death_date_hijri=g('rf_dhijri').value.trim(); if(g('rf_dage'))d.deceased_age=g('rf_dage').value.trim(); }
+  else if(s===4){ if(g('rf_azamen'))d.aza_men=g('rf_azamen').value; if(g('rf_azawomen'))d.aza_women=g('rf_azawomen').value; }
+}
+function reportGender(g){ reportCapture(2); state.reportData.deceased_gender=g; render(); }
+function reportVenue(){ reportCapture(4); render(); }
+function reportPick(kind){ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*,application/pdf'; inp.onchange=()=>{ if(inp.files&&inp.files[0]){ state.reportData.files[kind]=inp.files[0]; render(); } }; inp.click(); }
+function reportNext(){ const s=state.reportStep; reportCapture(s);
+  if(s===1&&(!state.reportData.reporter_name||!state.reportData.reporter_phone)){ toast('الاسم ورقم الجوال مطلوبان'); return; }
+  if(s===2&&!state.reportData.deceased_name){ toast('اسم المتوفّى مطلوب'); return; }
+  if(s===3&&(!state.reportData.files.permit||!state.reportData.files.id)){ toast('ارفع تصريح الدفن وهوية المتوفّى'); return; }
+  state.reportStep=s+1; render();
+}
+function reportBack(){ const s=state.reportStep; if(s===1||s==='done'){ back(); return; } reportCapture(s); state.reportStep=s-1; render(); }
+async function reportSubmit(){ reportCapture(4); const d=state.reportData;
+  if(!d.reporter_name||!d.reporter_phone||!d.deceased_name){ toast('أكمل البيانات المطلوبة'); return; }
+  toast('⏳ جاري إرسال البلاغ...');
+  const payload={reporter_name:d.reporter_name,reporter_relation:d.reporter_relation,reporter_phone:d.reporter_phone,reporter_nid:d.reporter_nid,deceased_name:d.deceased_name,deceased_gender:d.deceased_gender,deceased_age:d.deceased_age||null,aza_men:d.aza_men||null,aza_women:d.aza_women||null};
+  let res; try{ res=await (await fetch((window.API_BASE||'')+'/api/death-reports',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})).json(); }catch(e){ res={error:'فشل الاتصال'}; }
+  if(!res||!res.ok){ toast('❌ '+((res&&res.error)||'تعذّر الإرسال')); return; }
+  for(const kind of Object.keys(d.files||{})){ const f=d.files[kind]; if(!f)continue; const fd=new FormData(); fd.append('file',f); fd.append('kind',kind==='permit'?'تصريح الدفن':'هوية المتوفّى'); try{ await fetch((window.API_BASE||'')+'/api/death-reports/'+res.id+'/documents?token='+encodeURIComponent(res.edit_token),{method:'POST',body:fd}); }catch(e){} }
+  state.reportRef=res.ref; state.reportStep='done'; render();
+}
+window.openReport=openReport; window.reportNext=reportNext; window.reportBack=reportBack; window.reportPick=reportPick; window.reportGender=reportGender; window.reportVenue=reportVenue; window.reportSubmit=reportSubmit;
+
+// ============================================================
 //  Router
 // ============================================================
 const TABS=['home','map','announcements','more'];
-const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts};
+const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport};
 
 function render(){
   const view=state.stack.length?state.stack[state.stack.length-1]:state.tab;
@@ -461,6 +680,10 @@ async function loadData(){
   // Announcements
   const ann=await api('/api/announcements');
   state.announcements=ann.results||[];
+  // On this day (Hijri day+month match)
+  const otd=await api('/api/on-this-day');
+  state.onThisDay=otd.results||[];
+  state.otdToday=otd.today||null;
   // Banner content (admin-controlled) — matches website fields (public-content.js)
   const pc=await api('/api/public-content');
   const slides=[];

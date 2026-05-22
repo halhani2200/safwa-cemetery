@@ -33,7 +33,9 @@ lines.append("")
 
 for grave_num in range(1, ROWS * COLS + 1):  # 1 to 187
     row = ((grave_num - 1) // COLS) + 1
-    col = ((grave_num - 1) % COLS) + 1
+    # Numbering runs RIGHT -> LEFT within each row: grave 1 = east-most (col 17),
+    # grave 17 = west-most (col 1). To revert to old LEFT->RIGHT: ((grave_num - 1) % COLS) + 1
+    col = COLS - ((grave_num - 1) % COLS)
     lat, lng = calc(row, col)
     # Update by grave_number AND section to be safe
     lines.append(f"UPDATE graves SET latitude = {lat}, longitude = {lng}, row_number = {row}, grave_reference = 'أ-{row}-{grave_num}' WHERE section = 'أ' AND grave_number = {grave_num};")
