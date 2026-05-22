@@ -56,6 +56,26 @@ workflows:
           cd app/ios/App
           /usr/libexec/PlistBuddy -c "Set :objects:* :buildSettings:TARGETED_DEVICE_FAMILY 1" App.xcodeproj/project.pbxproj 2>/dev/null || \
             sed -i '' 's/TARGETED_DEVICE_FAMILY = .*/TARGETED_DEVICE_FAMILY = 1;/g' App.xcodeproj/project.pbxproj || true
+      - name: Patch Info.plist (privacy strings, encryption flag, unique build number)
+        script: |
+          cd app/ios/App/App
+          PL="Info.plist"
+          # @capacitor/camera and @capacitor/geolocation are linked, so Apple requires
+          # user-facing purpose strings (processing error 90683 otherwise). Arabic = app's primary language.
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string يستخدم التطبيق الكاميرا لالتقاط صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string يستخدم التطبيق معرض الصور لاختيار صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string يحفظ التطبيق الصور في معرض الصور عند الحاجة." "$PL" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string يستخدم التطبيق موقعك لعرض القبور القريبة وإرشادك إلى موقع القبر على الخريطة." "$PL" 2>/dev/null || true
+          # App uses only standard HTTPS (exempt) -> declare no non-exempt encryption to skip the per-build TestFlight prompt.
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PL"
+          # The failed processing consumed build 1; use Codemagic's monotonic build number to stay unique on every re-upload.
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER:-2}" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD_NUMBER:-2}" "$PL"
+          echo "---- Info.plist privacy/version keys after patch ----"
+          for k in NSCameraUsageDescription NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription NSLocationWhenInUseUsageDescription ITSAppUsesNonExemptEncryption CFBundleVersion; do
+            echo "$k = $(/usr/libexec/PlistBuddy -c "Print :$k" "$PL" 2>/dev/null)"
+          done
       - name: Install CocoaPods
         script: |
           cd app/ios/App
