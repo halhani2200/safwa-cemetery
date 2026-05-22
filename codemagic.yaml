@@ -77,7 +77,10 @@ workflows:
       #     cd app
       #     npx @capgo/cli bundle upload --channel production --apikey "$CAPGO_TOKEN" || true
     artifacts:
-      - build/ios/ipa/*.ipa
+      # build-ipa runs from app/ios/App, so the IPA lands here (NOT repo-root build/).
+      # Codemagic's App Store Connect publishing scans the gathered artifacts for the .ipa.
+      - app/ios/App/build/ios/ipa/*.ipa
+      - app/ios/App/build/ios/ipa/*.pkg
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
