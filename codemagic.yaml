@@ -19,9 +19,6 @@ workflows:
     integrations:
       app_store_connect: SafwaASC
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.safwacemetery.app
       vars:
         BUNDLE_ID: "com.safwacemetery.app"
         # APP_STORE_APP_ID: "0000000000"   # set after the App Store Connect app record exists
@@ -62,8 +59,11 @@ workflows:
         script: |
           cd app/ios/App
           pod install
-      - name: Set up provisioning profiles
+      - name: Set up code signing (auto-create bundle ID, certificate & profile)
         script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
           xcode-project use-profiles
       - name: Build signed IPA
         script: |
