@@ -94,7 +94,8 @@
   flex-direction: column;
   background: var(--bg);
   overflow: hidden;
-  padding-top: var(--safe-top, 0px);
+  /* NOTE: top safe-area inset lives on .appbar so the green bar fills the
+     status-bar area (no cream gap). Only the bottom inset stays on the screen. */
   padding-bottom: var(--safe-bottom, 0px);
 }
 .app .screen.no-safe { padding-top: 0; padding-bottom: 0; }
@@ -103,6 +104,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding-bottom: 96px;
 }
 .app .screen.no-nav .screen-body { padding-bottom: 24px; }
@@ -114,10 +116,11 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  padding: 10px 16px 10px;
+  /* top inset so the bar's background fills the iOS status-bar area (no cream gap) */
+  padding: calc(10px + var(--safe-top, 0px)) 16px 10px;
   background: var(--green);
   color: #fff;
-  min-height: 52px;
+  min-height: calc(52px + var(--safe-top, 0px));
   position: relative;
 }
 .appbar.cream {

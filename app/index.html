@@ -16,8 +16,10 @@
 <link rel="stylesheet" href="/app/app.css">
 <style>
 /* App root sizing for full-viewport mobile shell */
-html,body{height:100%;margin:0;background:var(--bg,#F7F2E6)}
-#app{height:100dvh;position:relative;overflow:hidden}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg,#F7F2E6)}
+/* Lock the document so only .screen-body scrolls (kills iOS rubber-band bounce of the whole app/header). */
+body{position:fixed;inset:0;width:100%;overscroll-behavior:none}
+#app{height:100%;position:relative;overflow:hidden}
 :root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
 /* Bottom nav pinned to bottom (screen is absolute, so nav must be too) */
 .app .bottom-nav{position:absolute;left:0;right:0;bottom:0;z-index:10}
@@ -375,7 +377,7 @@ function renderDetail(g){
   const f=g.gender==='انثى';
   const mapsUrl=(g.latitude&&g.longitude)?`https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`:null;
   const portrait = g.photo_url
-    ? `<div class="detail-portrait ${f?'female':''}" style="overflow:hidden;padding:0"><img src="${esc(g.photo_url)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
+    ? `<div class="detail-portrait ${f?'female':''}" style="overflow:hidden;padding:0;cursor:zoom-in" onclick="openPhoto('${esc(g.photo_url)}')"><img src="${esc(g.photo_url)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
     : `<div class="detail-portrait ${f?'female':''}">${f?I.arch(36):I.grave(36)}</div>`;
   document.getElementById('detailBody').innerHTML=`
     <div class="detail-hero">
@@ -406,6 +408,7 @@ function renderDetail(g){
   }
 }
 function closeDetail(){ document.getElementById('detailSheet')?.classList.remove('open'); document.getElementById('sheetScrim')?.classList.remove('open'); }
+function openPhoto(url){ if(!url) return; let o=document.getElementById('photoLightbox'); if(!o){ o=document.createElement('div'); o.id='photoLightbox'; o.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(8,12,10,.93);display:flex;align-items:center;justify-content:center;padding:calc(16px + var(--safe-top,0px)) 16px calc(16px + var(--safe-bottom,0px));opacity:0;transition:opacity .2s'; o.addEventListener('click',function(){o.style.opacity='0';setTimeout(function(){o.remove();},200);}); document.body.appendChild(o); } o.innerHTML=`<img src="${esc(url)}" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.55)">`; requestAnimationFrame(function(){o.style.opacity='1';}); }
 function readFatiha(){ toast('🤲 اللهم ارحم موتانا وموتى المسلمين'); }
 async function shareGrave(id){
   const url=location.origin+'/grave/'+id;
