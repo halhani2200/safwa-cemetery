@@ -33,7 +33,8 @@ workflows:
       - name: Add Capgo OTA plugin
         script: |
           cd app
-          npm install @capgo/capacitor-updater
+          # Pin to the Capacitor 7-compatible major (latest needs Capacitor 8)
+          npm install @capgo/capacitor-updater@^7 --legacy-peer-deps
       - name: Prepare iOS config (bundle local UI + Capgo)
         script: |
           cd app
