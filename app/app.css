@@ -116,11 +116,12 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  /* top inset so the bar's background fills the iOS status-bar area (no cream gap) */
-  padding: calc(10px + var(--safe-top, 0px)) 16px 10px;
+  /* Green fills the iOS status-bar area; the title row stays compact right below it
+     (padding-top is exactly the inset, so the title hugs the status bar instead of floating low). */
+  padding: var(--safe-top, 0px) 16px 8px;
   background: var(--green);
   color: #fff;
-  min-height: calc(52px + var(--safe-top, 0px));
+  min-height: calc(var(--safe-top, 0px) + 40px);
   position: relative;
 }
 .appbar.cream {
