@@ -1,10 +1,20 @@
-// Safwa death-announcement sync from the public "القطيف اليوم" Telegram preview.
-// Runs on a cron (every 20 min). No bot/API token needed — reads the t.me/s/ web preview.
-// Filters: message starts with "صفوى" + contains "ذمة الله". Extracts ONLY the name and
-// stores it in our own wording (we never copy the channel's text). Dedupes by post id.
+// Safwa death-announcement sync from the "القطيف اليوم / صحيفة الخط" website.
+// Runs on a cron (every 10 min). The site is server-rendered (no client-side JS data
+// loading), so we fetch the homepage HTML and read the "وفيات" cards directly — no
+// Telegram needed (owner chose the website as the source instead of Telegram).
+//
+// Each obituary card looks like:
+//   <a class="cardNews ..." href="https://dreamcp.alqhat.com/home/518611/صفوى:-...">
+//     <img ...>
+//     <p class="title ...">صفوى: الشاب عادل علي حسين المغلق في ذمة الله</p>
+//     <p class="newsDate">24 مايو , 2026 08:12 ص</p>
+//   </a>
+//
+// Filter: town (before the colon) == "صفوى" AND the title contains "ذمة الله".
+// We store ONLY the name, in our own wording (we never copy the site's article).
+// Dedupe by the site's numeric article id  ->  source_ref = "alqhat:{id}".
 
-const CHANNEL = 'ALQHAT0558511232';
-const PREVIEW = `https://t.me/s/${CHANNEL}`;
+const SOURCE = 'https://dreamcp.alqhat.com/';
 
 export default {
     async scheduled(event, env, ctx) {
@@ -25,39 +35,59 @@ function decodeEntities(s) {
         .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n));
 }
 function clean(html) {
-    return decodeEntities(html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')).trim();
+    return decodeEntities(html.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
 }
 
 async function sync(env) {
     let html;
     try {
-        const r = await fetch(PREVIEW, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SafwaCemetery/1.0)' } });
+        const r = await fetch(SOURCE, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SafwaCemetery/1.0)' },
+            cf: { cacheTtl: 0 }
+        });
         if (!r.ok) return { error: 'fetch_failed', status: r.status };
         html = await r.text();
     } catch (e) {
         return { error: 'fetch_error' };
     }
 
-    const re = /data-post="([^"]+)"[\s\S]*?<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
+    // Match each <a ...cardNews...> ... </a>. Attribute order is not assumed:
+    // the id comes from the /home/{id}/ href, the text from the inner <p class="title">.
+    const cardRe = /<a\b([^>]*cardNews[^>]*)>([\s\S]*?)<\/a>/g;
+    const idRe = /\/home\/(\d+)\//;
+    const titleRe = /<p[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/p>/;
+
     const stmts = [];
     let scanned = 0, candidates = 0, m;
-    while ((m = re.exec(html))) {
+    while ((m = cardRe.exec(html))) {
+        const attrs = m[1], inner = m[2];
+        const idM = idRe.exec(attrs);
+        if (!idM) continue;
         scanned++;
-        const postId = m[1];
-        const text = clean(m[2]);
+        const id = idM[1];
+        const tm = titleRe.exec(inner);
+        if (!tm) continue;
+        const text = clean(tm[1]);
         if (!text) continue;
-        if (text.slice(0, 15).indexOf('صفوى') === -1) continue;       // Safwa only
-        const death = text.indexOf('ذمة الله');
-        if (death === -1) continue;                                    // death announcement only
+
         const colon = text.indexOf(':');
-        if (colon === -1 || death < colon) continue;
-        let name = text.substring(colon + 1, death).replace(/\s*في\s*$/, '').replace(/\s+/g, ' ').trim();
+        if (colon === -1) continue;
+        const town = text.slice(0, colon).trim();
+        if (!(town === 'صفوى' || town.startsWith('صفوى'))) continue;   // Safwa only
+
+        const death = text.indexOf('ذمة الله');
+        if (death === -1 || death < colon) continue;                    // death announcement only
+
+        let name = text.substring(colon + 1, death)
+            .replace(/\s*في\s*$/, '')      // drop the trailing "في" of "في ذمة الله"
+            .replace(/\s+/g, ' ').trim();
         if (!name || name.length < 3 || name.length > 120) continue;
+
         candidates++;
-        const ref = 'tg:' + postId;
+        const ref = 'alqhat:' + id;
         stmts.push(env.DB.prepare(
             `INSERT INTO announcements (deceased_name, source, source_ref, is_active)
-             SELECT ?, 'telegram', ?, 1
+             SELECT ?, 'alqhat', ?, 1
              WHERE NOT EXISTS (SELECT 1 FROM announcements WHERE source_ref = ?)`
         ).bind(name, ref, ref));
     }
