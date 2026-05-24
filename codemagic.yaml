@@ -1,15 +1,6 @@
 # Codemagic CI/CD — builds, signs and ships the Safwa Cemetery iOS app WITHOUT a Mac.
 # Builds the bundled-UI iOS app (no server.url), signs via App Store Connect API key
 # (automatic signing), and uploads to TestFlight.
-#
-# OWNER SETUP (one-time, in the Codemagic UI):
-#   1. Connect the GitHub repo halhani2200/safwa-cemetery.
-#   2. Team Settings → Integrations → App Store Connect → add the API key
-#      (Issuer ID + Key ID + .p8). Name the integration exactly: SafwaASC
-#   3. After the app record exists in App Store Connect, set APP_STORE_APP_ID below
-#      (the numeric Apple ID of the app).
-#   4. (Optional, for OTA) add CAPGO_TOKEN as a secure env var and uncomment the
-#      "Publish Capgo bundle" step.
 
 workflows:
   ios-release:
@@ -21,7 +12,6 @@ workflows:
     environment:
       vars:
         BUNDLE_ID: "com.safwacemetery.app"
-        # APP_STORE_APP_ID: "0000000000"   # set after the App Store Connect app record exists
       node: 20
       xcode: latest
       cocoapods: default
@@ -30,102 +20,150 @@ workflows:
         script: |
           cd app
           npm ci || npm install
+
       - name: Add Capgo OTA plugin
         script: |
           cd app
-          # Pin to the Capacitor 7-compatible major (latest needs Capacitor 8)
+          # Pin to the Capacitor 7-compatible major (latest needs Capacitor 8).
           npm install @capgo/capacitor-updater@^7 --legacy-peer-deps
+
       - name: Prepare iOS config (bundle local UI + Capgo)
         script: |
           cd app
           node scripts/ios-prepare.js
+
       - name: Bundle web UI into www
         script: |
           cd app
           npm run build:web
+
       - name: Add iOS platform if missing
         script: |
           cd app
           [ -d ios ] || npx cap add ios
+
       - name: Capacitor sync (iOS)
         script: |
           cd app
           npx cap sync ios
+
       - name: Force iPhone-only build settings
         script: |
           cd app
           node scripts/force-ios-iphone-only.js
+
       - name: Patch Info.plist (privacy strings, encryption flag, unique build number)
         script: |
           cd app/ios/App/App
           PL="Info.plist"
-          # @capacitor/camera and @capacitor/geolocation are linked, so Apple requires
-          # user-facing purpose strings (processing error 90683 otherwise). Arabic = app's primary language.
-          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription يستخدم التطبيق الكاميرا لالتقاط صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string يستخدم التطبيق الكاميرا لالتقاط صور القبور وإضافتها بواسطة الموظفين." "$PL"
-          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription يستخدم التطبيق معرض الصور لاختيار صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string يستخدم التطبيق معرض الصور لاختيار صور القبور وإضافتها بواسطة الموظفين." "$PL"
-          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryAddUsageDescription يحفظ التطبيق الصور في معرض الصور عند الحاجة." "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string يحفظ التطبيق الصور في معرض الصور عند الحاجة." "$PL"
-          /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription يستخدم التطبيق موقعك لعرض القبور القريبة وإرشادك إلى موقع القبر على الخريطة." "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string يستخدم التطبيق موقعك لعرض القبور القريبة وإرشادك إلى موقع القبر على الخريطة." "$PL"
-          # App uses only standard HTTPS (exempt) -> declare no non-exempt encryption to skip the per-build TestFlight prompt.
-          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PL"
-          # The failed processing consumed build 1; use Codemagic's monotonic build number to stay unique on every re-upload.
+
+          set_string() {
+            /usr/libexec/PlistBuddy -c "Set :$1 $2" "$PL" 2>/dev/null || \
+              /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$PL"
+          }
+
+          set_bool() {
+            /usr/libexec/PlistBuddy -c "Set :$1 $2" "$PL" 2>/dev/null || \
+              /usr/libexec/PlistBuddy -c "Add :$1 bool $2" "$PL"
+          }
+
+          set_string NSCameraUsageDescription "يستخدم التطبيق الكاميرا لالتقاط صور القبور وإضافتها بواسطة الموظفين."
+          set_string NSPhotoLibraryUsageDescription "يستخدم التطبيق معرض الصور لاختيار صور القبور وإضافتها بواسطة الموظفين."
+          set_string NSPhotoLibraryAddUsageDescription "يحفظ التطبيق الصور في معرض الصور عند الحاجة."
+          set_string NSLocationWhenInUseUsageDescription "يستخدم التطبيق موقعك لعرض القبور القريبة وإرشادك إلى موقع القبر على الخريطة."
+
+          set_bool ITSAppUsesNonExemptEncryption false
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER:-2}" "$PL" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD_NUMBER:-2}" "$PL"
-          # Force App Store Connect to see iPhone only even if a generated project defaults to Universal.
+
           /usr/libexec/PlistBuddy -c "Delete :UIDeviceFamily" "$PL" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :UIDeviceFamily array" "$PL"
           /usr/libexec/PlistBuddy -c "Add :UIDeviceFamily:0 integer 1" "$PL"
-          # White status-bar text/icons: the green header sits under the iOS status bar.
+
           /usr/libexec/PlistBuddy -c "Set :UIStatusBarStyle UIStatusBarStyleLightContent" "$PL" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :UIStatusBarStyle string UIStatusBarStyleLightContent" "$PL"
-          /usr/libexec/PlistBuddy -c "Set :UIViewControllerBasedStatusBarAppearance false" "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Add :UIViewControllerBasedStatusBarAppearance bool false" "$PL"
+          set_bool UIViewControllerBasedStatusBarAppearance false
+
           echo "---- Info.plist privacy/version/device keys after patch ----"
           for k in NSCameraUsageDescription NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription NSLocationWhenInUseUsageDescription ITSAppUsesNonExemptEncryption CFBundleVersion UIStatusBarStyle UIViewControllerBasedStatusBarAppearance UIDeviceFamily; do
             echo "$k = $(/usr/libexec/PlistBuddy -c "Print :$k" "$PL" 2>/dev/null)"
           done
+
       - name: Install CocoaPods
         script: |
           cd app/ios/App
           pod install
+
       - name: Set up code signing (revoke stale certs, then auto-create cert & profile)
         script: |
           keychain initialize
-          # Apple caps distribution certificates; each stateless CI run mints a NEW cert (fresh key),
-          # so repeated runs hit the cap (POST /certificates -> HTTP 409). Revoke existing Apple
-          # Distribution certs first, then create exactly one fresh cert. Keeps us permanently under the cap.
-          app-store-connect certificates list --type DISTRIBUTION --type IOS_DISTRIBUTION --json > /tmp/dist_certs.json 2>/dev/null || echo "[]" > /tmp/dist_certs.json
-          for CID in $(python3 -c "import json; d=json.load(open('/tmp/dist_certs.json')); items=d if isinstance(d,list) else d.get('data',[]); print(' '.join(x['id'] for x in items if x.get('id')))"); do
-            echo "Revoking stale distribution certificate: $CID"
-            app-store-connect certificates delete "$CID" --ignore-not-found < /dev/null || true
+
+          rm -rf "$HOME/Library/Developer/Xcode/UserData/Certificates" \
+                 "$HOME/Library/MobileDevice/Certificates" \
+                 "$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Certificates" \
+                   "$HOME/Library/MobileDevice/Certificates" \
+                   "$HOME/Library/MobileDevice/Provisioning Profiles"
+
+          : > /tmp/dist_cert_ids.txt
+          for TYPE in DISTRIBUTION IOS_DISTRIBUTION; do
+            echo "Listing existing Apple distribution certificates of type $TYPE"
+            if app-store-connect certificates list --type "$TYPE" --json > "/tmp/certs_${TYPE}.json"; then
+              python3 - "/tmp/certs_${TYPE}.json" >> /tmp/dist_cert_ids.txt <<'PY'
+          import json, sys
+          path = sys.argv[1]
+          with open(path, 'r', encoding='utf-8') as fh:
+              data = json.load(fh)
+          items = data if isinstance(data, list) else data.get('data', [])
+          for item in items:
+              cid = item.get('id')
+              if cid:
+                  print(cid)
+          PY
+            else
+              echo "No certificates listed for $TYPE or listing command failed; continuing."
+            fi
           done
-          # Fresh private key so the newly created distribution certificate can be saved with its key.
+
+          sort -u /tmp/dist_cert_ids.txt -o /tmp/dist_cert_ids.txt
+          if [ -s /tmp/dist_cert_ids.txt ]; then
+            while IFS= read -r CID; do
+              [ -n "$CID" ] || continue
+              echo "Revoking stale distribution certificate: $CID"
+              app-store-connect certificates delete "$CID" < /dev/null || true
+            done < /tmp/dist_cert_ids.txt
+            sleep 5
+          else
+            echo "No stale distribution certificates found to revoke."
+          fi
+
           openssl genrsa -out /tmp/cert_key.pem 2048
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @file:/tmp/cert_key.pem
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @file:/tmp/cert_key.pem --verbose
+          echo "---- Downloaded signing files ----"
+          find "$HOME/Library" -name '*.p12' -o -name '*.mobileprovision' -o -name '*.provisionprofile'
           keychain add-certificates
           xcode-project use-profiles
+
       - name: Re-apply iPhone-only after signing profile update
         script: |
           cd app
           node scripts/force-ios-iphone-only.js
+
       - name: Build signed IPA
         script: |
           cd app/ios/App
           xcode-project build-ipa --workspace App.xcworkspace --scheme App
+
       # - name: Publish Capgo bundle (light OTA updates, post-approval)
       #   script: |
       #     cd app
       #     npx @capgo/cli bundle upload --channel production --apikey "$CAPGO_TOKEN" || true
+
     artifacts:
-      # build-ipa runs from app/ios/App, so the IPA lands here (NOT repo-root build/).
-      # Codemagic's App Store Connect publishing scans the gathered artifacts for the .ipa.
       - app/ios/App/build/ios/ipa/*.ipa
       - app/ios/App/build/ios/ipa/*.pkg
       - /tmp/xcodebuild_logs/*.log
+
     publishing:
       app_store_connect:
         auth: integration
