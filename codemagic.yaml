@@ -51,35 +51,41 @@ workflows:
         script: |
           cd app
           npx cap sync ios
-      - name: Force iPhone-only (TARGETED_DEVICE_FAMILY=1)
+      - name: Force iPhone-only build settings
         script: |
-          cd app/ios/App
-          /usr/libexec/PlistBuddy -c "Set :objects:* :buildSettings:TARGETED_DEVICE_FAMILY 1" App.xcodeproj/project.pbxproj 2>/dev/null || \
-            sed -i '' 's/TARGETED_DEVICE_FAMILY = .*/TARGETED_DEVICE_FAMILY = 1;/g' App.xcodeproj/project.pbxproj || true
+          cd app
+          node scripts/force-ios-iphone-only.js
       - name: Patch Info.plist (privacy strings, encryption flag, unique build number)
         script: |
           cd app/ios/App/App
           PL="Info.plist"
           # @capacitor/camera and @capacitor/geolocation are linked, so Apple requires
           # user-facing purpose strings (processing error 90683 otherwise). Arabic = app's primary language.
-          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string يستخدم التطبيق الكاميرا لالتقاط صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string يستخدم التطبيق معرض الصور لاختيار صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string يحفظ التطبيق الصور في معرض الصور عند الحاجة." "$PL" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string يستخدم التطبيق موقعك لعرض القبور القريبة وإرشادك إلى موقع القبر على الخريطة." "$PL" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription يستخدم التطبيق الكاميرا لالتقاط صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string يستخدم التطبيق الكاميرا لالتقاط صور القبور وإضافتها بواسطة الموظفين." "$PL"
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription يستخدم التطبيق معرض الصور لاختيار صور القبور وإضافتها بواسطة الموظفين." "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string يستخدم التطبيق معرض الصور لاختيار صور القبور وإضافتها بواسطة الموظفين." "$PL"
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryAddUsageDescription يحفظ التطبيق الصور في معرض الصور عند الحاجة." "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string يحفظ التطبيق الصور في معرض الصور عند الحاجة." "$PL"
+          /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription يستخدم التطبيق موقعك لعرض القبور القريبة وإرشادك إلى موقع القبر على الخريطة." "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string يستخدم التطبيق موقعك لعرض القبور القريبة وإرشادك إلى موقع القبر على الخريطة." "$PL"
           # App uses only standard HTTPS (exempt) -> declare no non-exempt encryption to skip the per-build TestFlight prompt.
-          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PL"
+          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PL"
           # The failed processing consumed build 1; use Codemagic's monotonic build number to stay unique on every re-upload.
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER:-2}" "$PL" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD_NUMBER:-2}" "$PL"
-          # White status-bar text/icons: the green header sits under the iOS status bar and no @capacitor/status-bar plugin is installed,
-          # so force light (white) content app-wide via Info.plist instead of a runtime plugin call.
-          /usr/libexec/PlistBuddy -c "Add :UIStatusBarStyle string UIStatusBarStyleLightContent" "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :UIStatusBarStyle UIStatusBarStyleLightContent" "$PL"
-          /usr/libexec/PlistBuddy -c "Add :UIViewControllerBasedStatusBarAppearance bool false" "$PL" 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :UIViewControllerBasedStatusBarAppearance false" "$PL"
-          echo "---- Info.plist privacy/version keys after patch ----"
-          for k in NSCameraUsageDescription NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription NSLocationWhenInUseUsageDescription ITSAppUsesNonExemptEncryption CFBundleVersion UIStatusBarStyle UIViewControllerBasedStatusBarAppearance; do
+          # Force App Store Connect to see iPhone only even if a generated project defaults to Universal.
+          /usr/libexec/PlistBuddy -c "Delete :UIDeviceFamily" "$PL" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UIDeviceFamily array" "$PL"
+          /usr/libexec/PlistBuddy -c "Add :UIDeviceFamily:0 integer 1" "$PL"
+          # White status-bar text/icons: the green header sits under the iOS status bar.
+          /usr/libexec/PlistBuddy -c "Set :UIStatusBarStyle UIStatusBarStyleLightContent" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :UIStatusBarStyle string UIStatusBarStyleLightContent" "$PL"
+          /usr/libexec/PlistBuddy -c "Set :UIViewControllerBasedStatusBarAppearance false" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :UIViewControllerBasedStatusBarAppearance bool false" "$PL"
+          echo "---- Info.plist privacy/version/device keys after patch ----"
+          for k in NSCameraUsageDescription NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription NSLocationWhenInUseUsageDescription ITSAppUsesNonExemptEncryption CFBundleVersion UIStatusBarStyle UIViewControllerBasedStatusBarAppearance UIDeviceFamily; do
             echo "$k = $(/usr/libexec/PlistBuddy -c "Print :$k" "$PL" 2>/dev/null)"
           done
       - name: Install CocoaPods
@@ -102,6 +108,10 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @file:/tmp/cert_key.pem
           keychain add-certificates
           xcode-project use-profiles
+      - name: Re-apply iPhone-only after signing profile update
+        script: |
+          cd app
+          node scripts/force-ios-iphone-only.js
       - name: Build signed IPA
         script: |
           cd app/ios/App
