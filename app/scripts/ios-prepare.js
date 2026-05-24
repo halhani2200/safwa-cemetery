@@ -16,8 +16,26 @@ if (cfg.server && cfg.server.url) {
     console.log('• removed server.url (iOS now loads bundled www)');
 }
 
-// 2) Enable Capgo OTA — light JS/HTML/CSS updates only (no native code via OTA).
+// 2) iOS shell polish: avoid WebView auto-insetting plus CSS safe-area at the
+// same time. That double inset made the header float too low and left a green
+// strip below the tab bar on iPhone screenshots.
+cfg.ios = cfg.ios || {};
+cfg.ios.contentInset = 'never';
+cfg.ios.scrollEnabled = true;
+cfg.ios.backgroundColor = '#FAF6EE';
+console.log('• disabled iOS automatic content insets; CSS owns safe-area spacing');
+
+// 3) Keep the green app header under the iOS status bar with light icons.
 cfg.plugins = cfg.plugins || {};
+cfg.plugins.StatusBar = {
+    ...(cfg.plugins.StatusBar || {}),
+    style: 'LIGHT',
+    backgroundColor: '#0E4D3F',
+    overlaysWebView: true
+};
+console.log('• configured iOS status bar overlay for a native full-screen feel');
+
+// 4) Enable Capgo OTA — light JS/HTML/CSS updates only (no native code via OTA).
 cfg.plugins.CapacitorUpdater = { autoUpdate: true };
 console.log('• enabled CapacitorUpdater (Capgo OTA)');
 
