@@ -1,0 +1,304 @@
+/* iOS TestFlight compact layout overrides.
+   Appended into app/www/app/app.css by scripts/copy-web.js during the iOS build only.
+   Keeps the public web and Android remote WebView untouched. */
+
+:root {
+  --t-base: 14px;
+  --t-md: 15px;
+  --r-md: 12px;
+  --r-lg: 16px;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  overscroll-behavior: none;
+}
+
+.app .appbar {
+  padding: var(--safe-top, 0px) 12px 7px !important;
+  min-height: calc(var(--safe-top, 0px) + 44px) !important;
+  gap: 8px;
+}
+
+.app .appbar.cream {
+  padding: calc(var(--safe-top, 0px) + 6px) 12px 8px !important;
+  min-height: calc(var(--safe-top, 0px) + 44px) !important;
+}
+
+.appbar-title {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.appbar-sub {
+  font-size: 10.5px;
+  line-height: 1.25;
+  margin-top: 0;
+}
+
+.appbar-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.appbar-logo {
+  width: 30px;
+  height: 30px;
+}
+
+#screenHost > .screen > .screen-body {
+  padding: 10px 12px calc(74px + var(--safe-bottom, 0px)) !important;
+}
+
+#screenHost > .screen.no-nav > .screen-body {
+  padding: 10px 12px calc(14px + var(--safe-bottom, 0px)) !important;
+}
+
+.app .screen-body {
+  padding-bottom: calc(74px + var(--safe-bottom, 0px)) !important;
+}
+
+.app .screen.no-nav .screen-body {
+  padding-bottom: calc(14px + var(--safe-bottom, 0px)) !important;
+}
+
+.screen.no-safe iframe[src^="/map.html"] {
+  box-sizing: border-box;
+  padding-top: var(--safe-top, 0px);
+  background: #1F2937;
+}
+
+.banner {
+  min-height: 72px;
+  padding: 11px 12px 10px;
+  border-radius: 12px;
+}
+
+.banner-slide:not(.is-active) {
+  inset: 11px 12px 10px;
+}
+
+.banner-kind {
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+.banner-text,
+.banner-text.ayah {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.banner-dots {
+  bottom: 6px;
+  left: 12px;
+}
+
+.quick-row {
+  gap: 8px;
+}
+
+.quick {
+  padding: 10px 6px 9px;
+  border-radius: 12px;
+  gap: 5px;
+}
+
+.quick-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.quick-label {
+  font-size: 11px;
+}
+
+.search {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+}
+
+.search input {
+  font-size: 14px;
+}
+
+.section-h {
+  margin: 2px 2px 6px;
+}
+
+.section-h h3 {
+  font-size: 13px;
+}
+
+.ann-card {
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.ann-top {
+  margin-bottom: 2px;
+}
+
+.ann-rahima {
+  font-size: 12px;
+}
+
+.ann-name {
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.ann-sub {
+  font-size: 11px;
+  margin: 0 0 4px;
+}
+
+.ann-row {
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.otd-card {
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.otd-head {
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.otd-row {
+  gap: 8px;
+  padding: 6px 4px;
+}
+
+.otd-ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.otd-name {
+  font-size: 13px;
+}
+
+.otd-fatiha {
+  min-height: 38px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.bottom-nav {
+  padding: 4px 8px calc(4px + var(--safe-bottom, 0px));
+}
+
+.bottom-nav-item {
+  min-height: 50px;
+  padding: 4px 4px 2px;
+  font-size: 10.5px;
+}
+
+.bottom-nav-item .nv-ico {
+  width: 24px;
+  height: 24px;
+}
+
+.sheet {
+  max-height: 84%;
+  border-radius: 18px 18px 0 0;
+}
+
+.sheet-head {
+  padding: 10px 14px 6px;
+}
+
+.sheet-body {
+  padding: 0 14px 14px;
+}
+
+.detail-hero {
+  padding: 2px 12px 12px;
+}
+
+.detail-portrait {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+}
+
+.detail-name {
+  font-size: 20px;
+}
+
+.location-grid {
+  margin: 0 14px;
+}
+
+.loc-cell {
+  padding: 8px 4px;
+}
+
+.loc-cell .val {
+  font-size: 15px;
+}
+
+.list-row {
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.contact-card,
+.grave-card {
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.grave-avatar,
+.contact-ico {
+  width: 40px;
+  height: 40px;
+}
+
+.grave-name,
+.contact-name {
+  font-size: 14px;
+}
+
+.toast {
+  bottom: calc(74px + var(--safe-bottom, 0px));
+}
+
+@media (max-height: 740px) {
+  .app .appbar {
+    min-height: calc(var(--safe-top, 0px) + 40px) !important;
+    padding-bottom: 6px !important;
+  }
+
+  #screenHost > .screen > .screen-body {
+    padding-top: 8px !important;
+    padding-bottom: calc(68px + var(--safe-bottom, 0px)) !important;
+  }
+
+  .banner {
+    min-height: 64px;
+  }
+
+  .quick {
+    padding-block: 8px;
+  }
+
+  .bottom-nav-item {
+    min-height: 46px;
+  }
+}
