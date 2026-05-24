@@ -266,8 +266,8 @@
             setTimeout(() => window.SafwaNative.hideSplash(), 500);
         });
 
-        // Set status bar style
-        window.SafwaNative.setStatusBarStyle(true);
+        // Use light status-bar icons over the green app header.
+        window.SafwaNative.setStatusBarStyle(false);
 
         // Log so we know we're in native
         console.log('[SafwaNative] Running on', platform);
