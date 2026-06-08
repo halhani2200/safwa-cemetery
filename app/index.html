@@ -137,9 +137,11 @@ async function api(path){ try{const r=await fetch((window.API_BASE||'')+path);re
 
 // ---------- App State ----------
 const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null };
-// Death-report entry is hidden from the public until staff review + real venue contacts are ready.
-// Enable for testing with /app/?report=1  (or localStorage safwa_report=1).
-window.REPORT_ENABLED = /[?&]report=1/.test(location.search) || (()=>{try{return localStorage.getItem('safwa_report')==='1';}catch(e){return false;}})();
+// Death-report entry is FULLY DISABLED for the first store release (no sensitive data collected,
+// simplifies Play Data Safety). Re-enable later — once Hosseiniya contacts + staff review are ready —
+// by restoring the flag check below. Feature code is intact; only this gate is hard-off.
+//   previously: /[?&]report=1/.test(location.search) || localStorage.getItem('safwa_report')==='1'
+window.REPORT_ENABLED = false;
 
 // ---------- Toast ----------
 function toast(msg, kind){
