@@ -10,12 +10,30 @@ workflows:
     integrations:
       app_store_connect: SafwaASC
     environment:
+      groups:
+        # Add the secure variable IOS_DIST_CERT_KEY_B64 to this group in the
+        # Codemagic UI (App settings → Environment variables → group "ios_signing").
+        # Value = base64 of the persistent iOS distribution private key (PEM).
+        - ios_signing
       vars:
         BUNDLE_ID: "com.safwacemetery.app"
       node: 20
       xcode: latest
       cocoapods: default
     scripts:
+      - name: Preflight — verify signing secret is present
+        script: |
+          # Fail in seconds (not after a ~15-min build) if the persistent signing
+          # key secret is missing. Add IOS_DIST_CERT_KEY_B64 to the "ios_signing"
+          # group in Codemagic (Environment variables, Secure).
+          if [ -z "$IOS_DIST_CERT_KEY_B64" ]; then
+            echo "FATAL: secure env var IOS_DIST_CERT_KEY_B64 is not set."
+            echo "Add it in Codemagic → Environment variables → group 'ios_signing'"
+            echo "(value = base64 of the persistent iOS distribution key), then rebuild."
+            exit 1
+          fi
+          echo "✓ signing key secret present (${#IOS_DIST_CERT_KEY_B64} chars)"
+
       - name: Install npm dependencies
         script: |
           cd app
@@ -94,50 +112,33 @@ workflows:
           cd app/ios/App
           pod install
 
-      - name: Set up code signing (revoke stale certs, then auto-create cert & profile)
+      - name: Set up code signing (persistent App Store cert — never revoke)
         script: |
           keychain initialize
 
-          rm -rf "$HOME/Library/Developer/Xcode/UserData/Certificates" \
-                 "$HOME/Library/MobileDevice/Certificates" \
+          # Local-only cleanup of downloaded signing files. This clears files on
+          # the CI machine ONLY — it does NOT revoke anything on Apple's side.
+          rm -rf "$HOME/Library/MobileDevice/Certificates" \
                  "$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Certificates" \
-                   "$HOME/Library/MobileDevice/Certificates" \
+          mkdir -p "$HOME/Library/MobileDevice/Certificates" \
                    "$HOME/Library/MobileDevice/Provisioning Profiles"
 
-          : > /tmp/dist_cert_ids.txt
-          for TYPE in DISTRIBUTION IOS_DISTRIBUTION; do
-            echo "Listing existing Apple distribution certificates of type $TYPE"
-            if app-store-connect certificates list --type "$TYPE" --json > "/tmp/certs_${TYPE}.json"; then
-              python3 - "/tmp/certs_${TYPE}.json" >> /tmp/dist_cert_ids.txt <<'PY'
-          import json, sys
-          path = sys.argv[1]
-          with open(path, 'r', encoding='utf-8') as fh:
-              data = json.load(fh)
-          items = data if isinstance(data, list) else data.get('data', [])
-          for item in items:
-              cid = item.get('id')
-              if cid:
-                  print(cid)
-          PY
-            else
-              echo "No certificates listed for $TYPE or listing command failed; continuing."
-            fi
-          done
+          # Persistent distribution private key (base64-encoded PEM) supplied via
+          # a Codemagic SECURE environment variable. Reusing the SAME key on every
+          # build keeps the SAME App Store distribution certificate, so a build
+          # that was already submitted is NEVER invalidated by a later build.
+          #
+          # ROOT CAUSE of the 1.0 (14) rejection (ITMS-90035 "invalid signature"):
+          # the previous flow REVOKED every distribution certificate at the start
+          # of each build, then created a throwaway one. So the next iOS build that
+          # ran after build 14 had been uploaded revoked build 14's certificate —
+          # which invalidated its signature when Apple validated it at review time.
+          # Fix = persistent key + NO revoke (only the App Store profile is fetched
+          # / created; the certificate is reused).
+          echo "$IOS_DIST_CERT_KEY_B64" | base64 --decode > /tmp/cert_key.pem
 
-          sort -u /tmp/dist_cert_ids.txt -o /tmp/dist_cert_ids.txt
-          if [ -s /tmp/dist_cert_ids.txt ]; then
-            while IFS= read -r CID; do
-              [ -n "$CID" ] || continue
-              echo "Revoking stale distribution certificate: $CID"
-              app-store-connect certificates delete "$CID" < /dev/null || true
-            done < /tmp/dist_cert_ids.txt
-            sleep 5
-          else
-            echo "No stale distribution certificates found to revoke."
-          fi
-
-          openssl genrsa -out /tmp/cert_key.pem 2048
+          # Reuse the App Store distribution certificate that matches this key, or
+          # create it ONCE on the first run. No revoke → past builds stay valid.
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @file:/tmp/cert_key.pem --verbose
           echo "---- Downloaded signing files ----"
           find "$HOME/Library" -name '*.p12' -o -name '*.mobileprovision' -o -name '*.provisionprofile'
