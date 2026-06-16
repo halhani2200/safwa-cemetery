@@ -694,7 +694,7 @@ function renderPanel(){
   const u=state.auth; if(!u) return renderLogin();
   const role=u.role, st=state.panelStats||{};
   // Every role: add + search/edit (these are /staff pages, accessible to all roles)
-  let rows=panelRow(I.plus(18),'إضافة قبر جديد',`openManage('/staff/add.html')`,true)
+  let rows=panelRow(I.plus(18),'إضافة قبر جديد',`openAddGrave()`,true)
          + panelRow(I.search(18),'البحث والتعديل',`openManage('/staff/search.html')`);
   // Admin-only management pages (middleware restricts /admin/* to admins)
   let adminRows='';
@@ -751,10 +751,150 @@ async function openStaffArea(){
 window.doLogin=doLogin; window.doLogout=doLogout; window.openManage=openManage; window.exitPanel=exitPanel; window.openStaffArea=openStaffArea;
 
 // ============================================================
+//  Native Add-Grave (volunteer field capture: camera + GPS + form)
+//  Mirrors /staff/add.html logic, native UI, submits via token.
+// ============================================================
+function agState(){ return state.ag || (state.ag={photo:null,gps:null,readings:[]}); }
+function agField(label,inner,req){ return `<div class="rfield"><label>${esc(label)}${req?' <span style="color:var(--danger,#DC2626)">*</span>':''}</label>${inner}</div>`; }
+function agPhotoHTML(){
+  const ag=agState();
+  if(ag.photo){
+    return `<div style="border-radius:14px;overflow:hidden;background:#000"><img src="${ag.photo}" style="width:100%;display:block;max-height:280px;object-fit:contain"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-secondary" style="flex:1" onclick="agPhoto('retake')">إعادة التصوير</button>
+        <button class="btn" style="flex:1;background:#6D28D9;color:#fff;border:none" onclick="agAI()">🤖 قراءة الشاهد</button>
+      </div>
+      <div id="ag_ai" style="display:none;text-align:center;font-size:12px;margin-top:8px"></div>`;
+  }
+  return `<div onclick="agPhoto('camera')" style="border:2px dashed var(--line,#E2D9C5);border-radius:14px;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;background:var(--bg-2,#F3EEE2);color:var(--green,#0E4D3F)">${I.image(32)}<span style="font-size:13px;color:var(--muted)">اضغط لتصوير الشاهد</span></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="agPhoto('camera')">📷 الكاميرا</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="agPhoto('gallery')">🖼️ المعرض</button>
+    </div>`;
+}
+function renderAddGrave(){
+  const days=['السبت','الاحد','الاثنين','الثلاثاء','الاربعاء','الخميس','الجمعة'];
+  const taStyle='width:100%;border-radius:14px;border:1px solid var(--line,#E2D9C5);background:#fff;padding:12px 14px;font-size:14px;font-family:inherit;color:var(--text,#1F2937);outline:none;box-sizing:border-box;resize:none';
+  return `<div class="screen no-nav">
+    ${appbar('إضافة قبر','تصوير + موقع + بيانات',{back:true,noBell:true})}
+    <div class="screen-body" style="padding:14px 16px 88px">
+      <div class="list-group-h">📸 صورة الشاهد</div>
+      <div id="ag_photoBox">${agPhotoHTML()}</div>
+      <div class="list-group-h" style="margin-top:16px">📍 الموقع (GPS)</div>
+      <div style="background:var(--bg-2,#F3EEE2);border-radius:14px;padding:12px">
+        <div id="ag_gpsText" style="font-weight:600;font-size:14px">اضغط «تحديد الموقع»</div>
+        <div id="ag_gpsCoords" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+        <button class="btn btn-primary" id="ag_gpsBtn" style="width:100%;margin-top:10px" onclick="agGPS()">📍 تحديد الموقع</button>
+      </div>
+      <div class="list-group-h" style="margin-top:16px">📝 بيانات المتوفّى</div>
+      ${agField('الاسم الكامل',`<input id="ag_name" placeholder="الاسم الكامل">`,true)}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${agField('الجنس',`<select id="ag_gender"><option value="">— اختر —</option><option value="ذكر">ذكر</option><option value="انثى">أنثى</option></select>`)}
+        ${agField('العمر',`<input id="ag_age" inputmode="numeric" placeholder="—">`)}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${agField('يوم الوفاة',`<select id="ag_day"><option value="">— اختر —</option>${days.map(d=>`<option>${d}</option>`).join('')}</select>`)}
+        ${agField('التاريخ الميلادي',`<input id="ag_greg" placeholder="4/1/2023">`)}
+      </div>
+      ${agField('التاريخ الهجري',`<input id="ag_hijri" placeholder="11/6/1444">`)}
+      <div class="list-group-h" style="margin-top:8px">🏷️ موقع القبر</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        ${agField('المنطقة',`<input id="ag_section" value="أ">`,true)}
+        ${agField('الصف',`<input id="ag_row" inputmode="numeric">`)}
+        ${agField('رقم القبر',`<input id="ag_num" inputmode="numeric">`)}
+      </div>
+      <div id="ag_dup" style="display:none;background:#FEF3C7;color:#92400E;padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:10px"></div>
+      ${agField('ملاحظات (اختياري)',`<textarea id="ag_notes" rows="2" style="${taStyle}"></textarea>`)}
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 16px calc(12px + var(--safe-bottom,0px));background:#fff;border-top:1px solid var(--line,#eee);display:flex;gap:10px">
+      <button class="btn btn-secondary" style="flex:.6" onclick="back()">إلغاء</button>
+      <button class="btn btn-primary" id="ag_save" style="flex:1.4" onclick="agSave()">💾 حفظ القبر</button>
+    </div>
+  </div>`;
+}
+async function agPhoto(mode){
+  const ag=agState();
+  if(mode==='retake'){ ag.photo=null; const b=document.getElementById('ag_photoBox'); if(b)b.innerHTML=agPhotoHTML(); return; }
+  if(window.SafwaNative&&window.SafwaNative.isNative&&window.SafwaNative.takePhoto){
+    const r=await window.SafwaNative.takePhoto({source:mode==='gallery'?'PHOTOS':'CAMERA',quality:75,maxWidth:1280,maxHeight:1280});
+    if(r&&r.success){ ag.photo=r.dataUrl; const b=document.getElementById('ag_photoBox'); if(b)b.innerHTML=agPhotoHTML(); }
+    else if(r&&!r.cancelled){ toast('❌ '+(r.error||'تعذّر فتح الكاميرا')); }
+    return;
+  }
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; if(mode==='camera')inp.capture='environment';
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f)return; const fr=new FileReader(); fr.onload=()=>{ const img=new Image(); img.onload=()=>{ const c=document.createElement('canvas'); const mw=1280,sc=img.width>mw?mw/img.width:1; c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc); c.getContext('2d').drawImage(img,0,0,c.width,c.height); ag.photo=c.toDataURL('image/jpeg',0.8); const b=document.getElementById('ag_photoBox'); if(b)b.innerHTML=agPhotoHTML(); }; img.src=fr.result; }; fr.readAsDataURL(f); };
+  inp.click();
+}
+async function agAI(){
+  const ag=agState(); if(!ag.photo)return;
+  const s=document.getElementById('ag_ai'); if(s){s.style.display='block';s.style.color='var(--muted)';s.textContent='⏳ الذكاء الاصطناعي يقرأ الشاهد...';}
+  const res=await apiSend('/api/ai/extract-tombstone','POST',{image:ag.photo});
+  const d=res.data||{};
+  if(d.error){ if(s){s.style.color='#B45309';s.textContent='⚠️ '+d.error;} return; }
+  if(d.extracted){ const e=d.extracted, set=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v;};
+    set('ag_name',e.name);set('ag_gender',e.gender);set('ag_age',e.age);set('ag_day',e.death_day);set('ag_greg',e.death_date_gregorian);set('ag_hijri',e.death_date_hijri);
+    if(s){s.style.color='var(--green,#0E4D3F)';s.textContent='✅ استُخرجت البيانات — راجعها وعدّل إذا لزم';}
+  }
+}
+async function agGPS(){
+  const ag=agState();
+  const st=document.getElementById('ag_gpsText'),co=document.getElementById('ag_gpsCoords'),btn=document.getElementById('ag_gpsBtn');
+  if(!window.SafwaNative||!window.SafwaNative.getCurrentPosition){ if(st)st.textContent='GPS غير متاح'; return; }
+  if(btn)btn.disabled=true; if(st)st.textContent='⏳ جاري التحديد... (0/5)'; ag.readings=[];
+  for(let i=0;i<5;i++){
+    const r=await window.SafwaNative.getCurrentPosition();
+    if(r&&r.success){ ag.readings.push({lat:r.latitude,lng:r.longitude,acc:r.accuracy}); if(st)st.textContent='⏳ جاري التحديد... ('+(i+1)+'/5)'; }
+    await new Promise(x=>setTimeout(x,600));
+  }
+  if(btn)btn.disabled=false;
+  if(!ag.readings.length){ if(st)st.textContent='❌ فشل تحديد الموقع — حاول مرة ثانية'; return; }
+  const sorted=ag.readings.slice().sort((a,b)=>a.acc-b.acc).slice(0,3);
+  const lat=sorted.reduce((s,r)=>s+r.lat,0)/sorted.length,lng=sorted.reduce((s,r)=>s+r.lng,0)/sorted.length,acc=sorted.reduce((s,r)=>s+r.acc,0)/sorted.length;
+  ag.gps={lat,lng,accuracy:acc};
+  if(st)st.textContent=acc<=10?'✅ موقع دقيق':acc<=25?'⚠️ دقة متوسطة — تحقّق':'⚠️ دقة ضعيفة — أعد التحديد';
+  if(co)co.innerHTML=`<span style="font-family:monospace">${lat.toFixed(6)}, ${lng.toFixed(6)}</span> · دقة ${Math.round(acc)}م (${ag.readings.length} قراءات) · <a onclick="openExt('https://www.google.com/maps?q=${lat},${lng}&z=20')" style="color:var(--green,#0E4D3F)">🗺️ تحقّق</a>`;
+  if(btn)btn.textContent='↻ إعادة التحديد';
+  agAutoFill(lat,lng);
+}
+function agAutoFill(lat,lng){
+  const C={nw:{lat:26.649576,lng:49.958884},ne:{lat:26.649639,lng:49.959215},sw:{lat:26.649334,lng:49.958942},se:{lat:26.649388,lng:49.959267}};
+  const minLat=Math.min(C.sw.lat,C.se.lat)-5e-5,maxLat=Math.max(C.nw.lat,C.ne.lat)+5e-5,minLng=Math.min(C.nw.lng,C.sw.lng)-5e-5,maxLng=Math.max(C.ne.lng,C.se.lng)+5e-5;
+  if(lat<minLat||lat>maxLat||lng<minLng||lng>maxLng)return;
+  const v=1-(lat-C.sw.lat)/((C.nw.lat+C.ne.lat)/2-(C.sw.lat+C.se.lat)/2+1e-6);
+  const u=(lng-(C.nw.lng+C.sw.lng)/2)/((C.ne.lng+C.se.lng)/2-(C.nw.lng+C.sw.lng)/2+1e-6);
+  const row=Math.max(1,Math.min(11,Math.round(v*10+1))),grave=Math.max(1,Math.min(17,Math.round(u*16+1)));
+  const sEl=document.getElementById('ag_section'),rEl=document.getElementById('ag_row'),nEl=document.getElementById('ag_num');
+  if(sEl)sEl.value='أ'; if(rEl&&!rEl.value)rEl.value=row; if(nEl&&!nEl.value)nEl.value=grave; agCheckDup();
+}
+async function agLoadGraves(){ if(state.agGraves)return; const d=await api('/api/graves'); state.agGraves=d.results||[]; }
+function agCheckDup(){
+  const w=document.getElementById('ag_dup'); if(!w)return;
+  const s=((document.getElementById('ag_section')||{}).value||'').trim(),r=(document.getElementById('ag_row')||{}).value,n=(document.getElementById('ag_num')||{}).value;
+  if(!s||!r||!n||!state.agGraves){ w.style.display='none'; return; }
+  const ex=state.agGraves.find(g=>g.section===s&&String(g.row_number)===String(r)&&String(g.grave_number)===String(n));
+  if(ex){ w.style.display='block'; w.innerHTML='⚠️ هذا الموقع ('+esc(s)+'-'+esc(r)+'-'+esc(n)+') مسجّل باسم: '+esc(ex.name)+'. تأكّد أنه ليس تكراراً.'; } else w.style.display='none';
+}
+async function agSave(){
+  const v=id=>(document.getElementById(id)||{}).value;
+  const name=(v('ag_name')||'').trim();
+  if(!name){ toast('❌ الاسم مطلوب'); const el=document.getElementById('ag_name'); if(el)el.focus(); return; }
+  const ag=agState(), btn=document.getElementById('ag_save'); if(btn){btn.disabled=true;btn.textContent='⏳ جاري الحفظ...';}
+  const body={ name, gender:v('ag_gender')||null, age:v('ag_age')?parseInt(v('ag_age')):null,
+    death_day:v('ag_day')||null, death_date_gregorian:(v('ag_greg')||'').trim()||null, death_date_hijri:(v('ag_hijri')||'').trim()||null,
+    section:(v('ag_section')||'أ').trim()||'أ', row_number:v('ag_row')?parseInt(v('ag_row')):null, grave_number:v('ag_num')?parseInt(v('ag_num')):null,
+    latitude:ag.gps?ag.gps.lat:null, longitude:ag.gps?ag.gps.lng:null, notes:(v('ag_notes')||'').trim()||null, photo_url:null };
+  const res=await apiSend('/api/graves','POST',body);
+  if(res.ok&&res.data&&(res.data.ok||res.data.id)){ toast('✅ تم حفظ القبر'); state.ag={photo:null,gps:null,readings:[]}; state.agGraves=null; state.panelStats=null; back(); loadPanelStats(); }
+  else { toast('❌ '+((res.data&&res.data.error)||'فشل الحفظ')); if(btn){btn.disabled=false;btn.textContent='💾 حفظ القبر';} }
+}
+function openAddGrave(){ state.ag={photo:null,gps:null,readings:[]}; agLoadGraves(); push('addGrave'); }
+window.agPhoto=agPhoto; window.agAI=agAI; window.agGPS=agGPS; window.agSave=agSave; window.openAddGrave=openAddGrave;
+
+// ============================================================
 //  Router
 // ============================================================
 const TABS=['home','map','announcements','more'];
-const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport,login:renderLogin,panel:renderPanel};
+const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport,login:renderLogin,panel:renderPanel,addGrave:renderAddGrave};
 
 function render(){
   const view=state.stack.length?state.stack[state.stack.length-1]:state.tab;
@@ -763,6 +903,7 @@ function render(){
     `<div id="screenHost">${(RENDER[view]||renderHome)()}</div>${showNav?bottomNav():''}`;
   if(view==='home'){ startBanner(); }
   if(view==='search'){ setTimeout(()=>{const si=document.getElementById('searchInput');if(si){si.focus();si.addEventListener('input',()=>{clearTimeout(searchTO);searchTO=setTimeout(doSearch,300);});si.addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});}},50); }
+  if(view==='addGrave'){ setTimeout(()=>{ ['ag_section','ag_row','ag_num'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',agCheckDup);}); },50); }
 }
 function go(tab){ state.stack=[]; state.tab=tab; closeDetail(); render(); }
 function push(view){ state.stack.push(view); render(); }
