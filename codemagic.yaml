@@ -93,6 +93,11 @@ workflows:
           set_bool ITSAppUsesNonExemptEncryption false
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER:-2}" "$PL" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD_NUMBER:-2}" "$PL"
+          # Marketing version must be HIGHER than the already-approved App Store version (1.0),
+          # otherwise App Store Connect rejects the upload with ITMS-90062. Bump to 1.0.1 for
+          # the native update. (TestFlight accepts many builds under one version string.)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.1" "$PL" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.1" "$PL"
 
           /usr/libexec/PlistBuddy -c "Delete :UIDeviceFamily" "$PL" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :UIDeviceFamily array" "$PL"
