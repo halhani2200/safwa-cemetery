@@ -136,7 +136,7 @@ const isFresh = (ts) => ts && (Date.now()-new Date(ts).getTime())<86400000;
 async function api(path){ try{const r=await fetch((window.API_BASE||'')+path);return await r.json();}catch(e){return{error:e.message};} }
 
 // ---------- App State ----------
-const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null };
+const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null, auth:null, panelStats:null };
 // Death-report entry is FULLY DISABLED for the first store release (no sensitive data collected,
 // simplifies Play Data Safety). Re-enable later — once Hosseiniya contacts + staff review are ready —
 // by restoring the flag check below. Feature code is intact; only this gate is hard-off.
@@ -517,10 +517,6 @@ function renderMore(){
         <div class="list-row" onclick="onBell()"><div class="ico">${I.bell(18)}</div><div class="lbl">تفعيل الإشعارات</div><span class="arrow">${I.forward(16)}</span></div>
         <div class="list-row" onclick="openExt('/privacy')"><div class="ico">${I.shield(18)}</div><div class="lbl">سياسة الخصوصية</div><span class="arrow">${I.forward(16)}</span></div>
       </div>
-      <div class="list-group-h">للموظفين والمتطوعين</div>
-      <div class="list-group">
-        <div class="list-row" onclick="openExt('https://safwa-cemetery.com/login.html')"><div class="ico" style="background:var(--bg-2);color:var(--muted)">${I.lock(18)}</div><div class="lbl" style="color:var(--muted)">دخول الموظفين والإدارة</div><span class="arrow">${I.forward(16)}</span></div>
-      </div>
       <div style="text-align:center;margin-top:22px;font-size:11px;color:var(--muted-2)">الإصدار 2.0.0 · مقبرة صفوى</div>
     </div>
   </div>`;
@@ -641,10 +637,123 @@ async function reportSubmit(){ reportCapture(4); const d=state.reportData;
 window.openReport=openReport; window.reportNext=reportNext; window.reportBack=reportBack; window.reportPick=reportPick; window.reportGender=reportGender; window.reportVenue=reportVenue; window.reportSubmit=reportSubmit;
 
 // ============================================================
+//  Staff / Admin — in-app panel (hidden long-press entrance)
+//  Native login + role dashboard. Management actions open the
+//  existing /staff and /admin pages IN-APP (same-origin nav,
+//  never an external browser). Auth = session cookie (web/Android).
+//  iOS native (cross-origin) will use a token — added before iOS rebuild.
+// ============================================================
+const ROLE_LABEL={admin:'مدير',staff:'موظف',volunteer:'متطوّع'};
+async function apiSend(path, method, body){
+  try{
+    const r=await fetch((window.API_BASE||'')+path,{method:method||'POST',headers:body?{'Content-Type':'application/json'}:{},credentials:'include',body:body?JSON.stringify(body):undefined});
+    const d=await r.json().catch(()=>({})); return {ok:r.ok,status:r.status,data:d};
+  }catch(e){ return {ok:false,status:0,data:{error:e.message}}; }
+}
+
+// ---- Login screen (native) ----
+function renderLogin(){
+  return `<div class="screen no-nav">
+    ${appbar('دخول الموظفين','منطقة خاصة',{back:true,noBell:true})}
+    <div class="screen-body" style="padding:26px 18px">
+      <div style="text-align:center;margin:6px 0 22px">
+        <div style="width:74px;height:74px;margin:0 auto 14px;display:grid;place-items:center;background:var(--green-50,#EAF1EE);border-radius:22px;color:var(--green,#0E4D3F)">${I.lock(32)}</div>
+        <div style="font-size:13px;color:var(--muted)">سجّل دخولك بحساب الموظف أو المدير</div>
+      </div>
+      <div class="rfield"><label>اسم المستخدم</label><input id="lg_user" autocomplete="username" autocapitalize="none" placeholder="اسم المستخدم"></div>
+      <div class="rfield"><label>كلمة المرور</label><input id="lg_pass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="lg_err" style="display:none;color:var(--danger,#DC2626);font-size:13px;margin:-4px 0 12px;text-align:center"></div>
+      <button class="btn btn-primary" id="lg_btn" onclick="doLogin()" style="width:100%">دخول</button>
+    </div>
+  </div>`;
+}
+async function doLogin(){
+  const u=(document.getElementById('lg_user')?.value||'').trim();
+  const p=(document.getElementById('lg_pass')?.value||'');
+  const err=document.getElementById('lg_err'),btn=document.getElementById('lg_btn');
+  const fail=(m)=>{ if(err){err.textContent=m;err.style.display='block';} if(btn){btn.disabled=false;btn.textContent='دخول';} };
+  if(!u||!p){ fail('أدخل اسم المستخدم وكلمة المرور'); return; }
+  if(btn){btn.disabled=true;btn.textContent='جارٍ الدخول…';}
+  const res=await apiSend('/api/auth/login','POST',{username:u,password:p});
+  if(res.ok&&res.data&&res.data.user){ state.auth=res.data.user; state.panelStats=null; state.stack=['panel']; render(); loadPanelStats(); }
+  else fail((res.data&&res.data.error)||'بيانات الدخول غير صحيحة');
+}
+async function doLogout(){ try{ await apiSend('/api/auth/logout','POST'); }catch(e){} state.auth=null; state.panelStats=null; state.stack=[]; state.tab='home'; render(); toast('تم تسجيل الخروج'); }
+
+async function loadPanelStats(){
+  const s=await api('/api/stats'); state.panelStats=s||{};
+  const v=state.stack[state.stack.length-1]; if(v==='panel') render();
+}
+
+// ---- Role dashboard (native) ----
+function panelRow(icon,title,onclick,accent){
+  return `<div class="list-row" onclick="${onclick}"><div class="ico"${accent?' style="background:var(--green,#0E4D3F);color:#fff"':''}>${icon}</div><div class="lbl">${esc(title)}</div><span class="arrow">${I.forward(16)}</span></div>`;
+}
+function renderPanel(){
+  const u=state.auth; if(!u) return renderLogin();
+  const role=u.role, st=state.panelStats||{};
+  // Every role: add + search/edit (these are /staff pages, accessible to all roles)
+  let rows=panelRow(I.plus(18),'إضافة قبر جديد',`openManage('/staff/add.html')`,true)
+         + panelRow(I.search(18),'البحث والتعديل',`openManage('/staff/search.html')`);
+  // Admin-only management pages (middleware restricts /admin/* to admins)
+  let adminRows='';
+  if(role==='admin'){
+    adminRows = panelRow(I.megaphone(18),'إعلانات الوفاة',`openManage('/admin/announcements.html')`)
+              + panelRow(I.flag(18),'بلاغات الوفاة',`openManage('/admin/death-reports.html')`)
+              + panelRow(I.grave(18),'إدارة القبور',`openManage('/admin/graves.html')`)
+              + panelRow(I.users(18),'المستخدمون والصلاحيات',`openManage('/admin/users.html')`)
+              + panelRow(I.shield(18),'الإعدادات والبانر',`openManage('/admin/settings.html')`)
+              + panelRow(I.clock(18),'سجل النشاط',`openManage('/admin/audit.html')`);
+  }
+  const stat=(v,l)=>`<div style="flex:1;background:rgba(255,255,255,.12);border-radius:12px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700">${v!=null?v:'—'}</div><div style="font-size:11px;opacity:.85">${l}</div></div>`;
+  return `<div class="screen no-nav">
+    <div class="appbar">
+      <button class="appbar-icon" onclick="exitPanel()">${I.back(20)}</button>
+      <div class="appbar-title">لوحة ${esc(ROLE_LABEL[role]||'')}<span class="appbar-sub">${esc(u.full_name||u.username||'')}</span></div>
+      <button class="appbar-icon" onclick="doLogout()" title="تسجيل الخروج">${I.lock(20)}</button>
+    </div>
+    <div class="screen-body" style="padding:14px 16px 24px">
+      <div style="background:linear-gradient(135deg,var(--green,#0E4D3F),var(--green-dark,#08362C));color:#fff;border-radius:18px;padding:16px 18px">
+        <div style="font-family:var(--font-display,inherit);font-size:18px;font-weight:700">أهلاً ${esc(u.full_name||u.username||'')}</div>
+        <div style="font-size:12.5px;opacity:.9;margin-top:2px">إدارة بيانات مقبرة صفوى</div>
+        <div style="display:flex;gap:10px;margin-top:14px">${stat(st.total_graves,'إجمالي القبور')}${stat(st.my_additions,'إضافاتي')}</div>
+      </div>
+      <div class="list-group-h" style="margin-top:18px">الإجراءات</div>
+      <div class="list-group">${rows}</div>
+      ${adminRows?`<div class="list-group-h">إدارة (مدير فقط)</div><div class="list-group">${adminRows}</div>`:''}
+      <div style="text-align:center;margin-top:18px;font-size:11px;color:var(--muted-2)">دورك: ${esc(ROLE_LABEL[role]||role)} · لتغيير الصلاحيات راجع المدير</div>
+    </div>
+  </div>`;
+}
+function openManage(url){ location.assign((window.API_BASE||'')+url); }
+function exitPanel(){ state.stack=[]; state.tab='home'; render(); }
+
+// ---- Hidden long-press entrance on the app logo ----
+function setupHiddenEntrance(){
+  const app=document.getElementById('app'); if(!app||app._heBound)return; app._heBound=true;
+  let timer=null, sx=0, sy=0;
+  const start=(e)=>{ const logo=e.target.closest&&e.target.closest('.appbar-logo'); if(!logo)return; sx=e.clientX;sy=e.clientY; clearTimeout(timer); timer=setTimeout(()=>{ timer=null; openStaffArea(); }, 650); };
+  const move=(e)=>{ if(timer&&(Math.abs(e.clientX-sx)>10||Math.abs(e.clientY-sy)>10)){ clearTimeout(timer); timer=null; } };
+  const cancel=()=>{ if(timer){clearTimeout(timer);timer=null;} };
+  app.addEventListener('pointerdown',start);
+  app.addEventListener('pointermove',move);
+  app.addEventListener('pointerup',cancel);
+  app.addEventListener('pointercancel',cancel);
+  app.addEventListener('pointerleave',cancel);
+}
+async function openStaffArea(){
+  if(navigator.vibrate){try{navigator.vibrate(15);}catch(e){}}
+  if(!state.auth){ const me=await api('/api/auth/me'); if(me&&me.authenticated&&me.user) state.auth=me.user; }
+  if(state.auth){ state.panelStats=null; state.stack=['panel']; render(); loadPanelStats(); }
+  else { state.stack=['login']; render(); }
+}
+window.doLogin=doLogin; window.doLogout=doLogout; window.openManage=openManage; window.exitPanel=exitPanel; window.openStaffArea=openStaffArea;
+
+// ============================================================
 //  Router
 // ============================================================
 const TABS=['home','map','announcements','more'];
-const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport};
+const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport,login:renderLogin,panel:renderPanel};
 
 function render(){
   const view=state.stack.length?state.stack[state.stack.length-1]:state.tab;
@@ -712,6 +821,7 @@ async function loadData(){
 document.getElementById('app').innerHTML=`<div class="splash"><div class="crest">${I.crest(56,'#D4A93A')}</div><h1>مقبرة صفوى</h1><div class="sub">دليل أهالي صفوى لزيارة المتوفين</div><div class="loader">جارٍ التحميل…</div></div>`;
 setTimeout(()=>{
   render();
+  setupHiddenEntrance();
   loadData();
   if(window.SafwaNative&&window.SafwaNative.isNative) setTimeout(()=>window.SafwaNative.hideSplash&&window.SafwaNative.hideSplash(),300);
 }, 1400);
