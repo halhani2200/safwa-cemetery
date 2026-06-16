@@ -1053,7 +1053,7 @@ window.openUsersManage=openUsersManage; window.userSave=userSave; window.userSet
 // ---- إدارة القبور (browse + filter + sort + export + edit) — admin/staff ----
 function openGravesManage(){ state.mgGraves=null; state.gmq=''; state.gmGender=''; state.gmSection=''; state.gmYear=''; state.gmSort='id'; state.gmDir='asc'; mgLoad('mgGraves','/api/graves'); push('gravesManage'); }
 
-function gmExtractYear(date){ if(!date) return ''; const m=String(date).match(/(\d{4})/); return m?m[1]:''; }
+function gmExtractYear(date){ if(!date) return ''; const m=String(date).match(/(\d{4})/); if(!m) return ''; const y=Number(m[1]); return (y>=1900&&y<=2200)?m[1]:''; } // تجاهل أي سنة هجرية أُدخلت بالغلط في خانة الميلادي (مثل 1445)
 function gmDateSortable(str){
   if(!str) return -Infinity; const s=String(str).trim();
   let m=s.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})/);
