@@ -700,7 +700,8 @@ function renderPanel(){
          + panelRow(I.grave(18),'إضافاتي',`openMyGraves()`);
   let adminRows='';
   if(role==='admin'||role==='staff'){
-    adminRows += panelRow(I.megaphone(18),'إعلانات الوفاة',`openAnnManage()`);
+    adminRows += panelRow(I.grave(18),'إدارة القبور',`openGravesManage()`)
+              + panelRow(I.megaphone(18),'إعلانات الوفاة',`openAnnManage()`);
   }
   if(role==='admin'){
     adminRows += panelRow(I.flag(18),'بلاغات الوفاة',`openReports()`)
@@ -1049,11 +1050,28 @@ function renderReports(){
 }
 window.openUsersManage=openUsersManage; window.userSave=userSave; window.userSetRole=userSetRole; window.userDelete=userDelete; window.openSettings=openSettings; window.settingsSave=settingsSave; window.openAudit=openAudit; window.openReports=openReports;
 
+// ---- إدارة القبور (browse all graves + edit) — admin/staff ----
+function openGravesManage(){ state.mgGraves=null; state.gmq=''; mgLoad('mgGraves','/api/graves'); push('gravesManage'); }
+function gmRows(){
+  const d=state.mgGraves; if(d==null) return mgLoading();
+  const all=(d.results)||[]; const q=(state.gmq||'').trim();
+  let list=all;
+  if(q){ list=all.filter(g=>((g.name||'').indexOf(q)>=0)||(((g.section||'')+'-'+(g.row_number||'')+'-'+(g.grave_number||'')).indexOf(q)>=0)); }
+  if(!list.length) return `<div class="empty" style="padding:30px"><div class="ico">${I.search(22)}</div><p>لا نتائج</p></div>`;
+  const shown=list.slice(0,150);
+  return `<div style="font-size:12px;color:var(--muted);padding:0 2px 8px">${list.length} قبر${list.length>150?' — يُعرض أول 150، ابحث للتضييق':''}</div><div class="list-group">${shown.map(g=>mgRow(I.grave(18),g.name,`${esc(g.section||'-')} · ${g.row_number||'-'}-${g.grave_number||'-'}`,`openEditGrave(${g.id})`)).join('')}</div>`;
+}
+function renderGravesManage(){
+  return `<div class="screen no-nav">${appbar('إدارة القبور','تصفّح وتعديل كل القبور',{back:true,noBell:true})}<div class="screen-body" style="padding:12px 14px"><div class="search" style="margin-bottom:12px">${I.search(17)}<input id="gm_q" placeholder="ابحث بالاسم أو المنطقة" value="${esc(state.gmq||'')}"></div><div id="gm_list">${gmRows()}</div></div></div>`;
+}
+function gmFilter(){ const inp=document.getElementById('gm_q'); state.gmq=inp?inp.value:''; const l=document.getElementById('gm_list'); if(l)l.innerHTML=gmRows(); }
+window.openGravesManage=openGravesManage;
+
 // ============================================================
 //  Router
 // ============================================================
 const TABS=['home','map','announcements','more'];
-const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport,login:renderLogin,panel:renderPanel,addGrave:renderAddGrave,myGraves:renderMyGraves,editGrave:renderEditGrave,annManage:renderAnnManage,annForm:renderAnnForm,usersManage:renderUsersManage,userForm:renderUserForm,settings:renderSettings,audit:renderAudit,reports:renderReports};
+const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport,login:renderLogin,panel:renderPanel,addGrave:renderAddGrave,myGraves:renderMyGraves,editGrave:renderEditGrave,annManage:renderAnnManage,annForm:renderAnnForm,usersManage:renderUsersManage,userForm:renderUserForm,settings:renderSettings,audit:renderAudit,reports:renderReports,gravesManage:renderGravesManage};
 
 function render(){
   const view=state.stack.length?state.stack[state.stack.length-1]:state.tab;
@@ -1063,6 +1081,7 @@ function render(){
   if(view==='home'){ startBanner(); }
   if(view==='search'){ setTimeout(()=>{const si=document.getElementById('searchInput');if(si){si.focus();si.addEventListener('input',()=>{clearTimeout(searchTO);searchTO=setTimeout(doSearch,300);});si.addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});}},50); }
   if(view==='addGrave'){ setTimeout(()=>{ ['ag_section','ag_row','ag_num'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',agCheckDup);}); },50); }
+  if(view==='gravesManage'){ setTimeout(()=>{ const gi=document.getElementById('gm_q'); if(gi)gi.addEventListener('input',gmFilter); },50); }
 }
 function go(tab){ state.stack=[]; state.tab=tab; closeDetail(); render(); }
 function push(view){ state.stack.push(view); render(); }
