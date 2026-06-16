@@ -396,6 +396,7 @@ function renderDetail(g){
       ${g.death_date_hijri||g.death_date_gregorian?`<div class="meta-row"><div class="ico">${I.calendar(18)}</div><div style="flex:1"><span class="k">تاريخ الوفاة</span>${g.death_date_hijri?`<span class="v">${esc(fmtDate(g.death_date_hijri))} هـ</span>`:''}${g.death_date_gregorian?`<span class="k" style="margin-top:2px">${esc(fmtDate(g.death_date_gregorian))} م</span>`:''}</div></div>`:''}
       ${g.death_day?`<div class="meta-row"><div class="ico">${I.clock(18)}</div><div style="flex:1"><span class="k">يوم الوفاة</span><span class="v">${esc(g.death_day)}</span></div></div>`:''}
       <div class="meta-actions">
+        ${state.auth?`<button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--green,#0E4D3F);color:#fff" onclick="openEditGrave(${g.id})">✏️ تعديل</button>`:''}
         <button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="readFatiha()">${I.beads(15)} الفاتحة</button>
         <button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="shareGrave(${g.id})">${I.share(15)} مشاركة</button>
         <button class="btn-sm" style="border-radius:10px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--danger)" onclick="toast('استخدم زر الإبلاغ في الموقع')">${I.flag(15)} إبلاغ</button>
@@ -695,16 +696,17 @@ function renderPanel(){
   const role=u.role, st=state.panelStats||{};
   // Every role: add + search/edit (these are /staff pages, accessible to all roles)
   let rows=panelRow(I.plus(18),'إضافة قبر جديد',`openAddGrave()`,true)
-         + panelRow(I.search(18),'البحث والتعديل',`openManage('/staff/search.html')`);
-  // Admin-only management pages (middleware restricts /admin/* to admins)
+         + panelRow(I.search(18),'بحث وتعديل القبور',`push('search')`)
+         + panelRow(I.grave(18),'إضافاتي',`openMyGraves()`);
   let adminRows='';
+  if(role==='admin'||role==='staff'){
+    adminRows += panelRow(I.megaphone(18),'إعلانات الوفاة',`openAnnManage()`);
+  }
   if(role==='admin'){
-    adminRows = panelRow(I.megaphone(18),'إعلانات الوفاة',`openManage('/admin/announcements.html')`)
-              + panelRow(I.flag(18),'بلاغات الوفاة',`openManage('/admin/death-reports.html')`)
-              + panelRow(I.grave(18),'إدارة القبور',`openManage('/admin/graves.html')`)
-              + panelRow(I.users(18),'المستخدمون والصلاحيات',`openManage('/admin/users.html')`)
-              + panelRow(I.shield(18),'الإعدادات والبانر',`openManage('/admin/settings.html')`)
-              + panelRow(I.clock(18),'سجل النشاط',`openManage('/admin/audit.html')`);
+    adminRows += panelRow(I.flag(18),'بلاغات الوفاة',`openReports()`)
+              + panelRow(I.users(18),'المستخدمون والصلاحيات',`openUsersManage()`)
+              + panelRow(I.shield(18),'الإعدادات والبانر',`openSettings()`)
+              + panelRow(I.clock(18),'سجل النشاط',`openAudit()`);
   }
   const stat=(v,l)=>`<div style="flex:1;background:rgba(255,255,255,.12);border-radius:12px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700">${v!=null?v:'—'}</div><div style="font-size:11px;opacity:.85">${l}</div></div>`;
   return `<div class="screen no-nav">
@@ -721,7 +723,7 @@ function renderPanel(){
       </div>
       <div class="list-group-h" style="margin-top:18px">الإجراءات</div>
       <div class="list-group">${rows}</div>
-      ${adminRows?`<div class="list-group-h">إدارة (مدير فقط)</div><div class="list-group">${adminRows}</div>`:''}
+      ${adminRows?`<div class="list-group-h">الإدارة</div><div class="list-group">${adminRows}</div>`:''}
       <div style="text-align:center;margin-top:18px;font-size:11px;color:var(--muted-2)">دورك: ${esc(ROLE_LABEL[role]||role)} · لتغيير الصلاحيات راجع المدير</div>
     </div>
   </div>`;
@@ -891,10 +893,167 @@ function openAddGrave(){ state.ag={photo:null,gps:null,readings:[]}; agLoadGrave
 window.agPhoto=agPhoto; window.agAI=agAI; window.agGPS=agGPS; window.agSave=agSave; window.openAddGrave=openAddGrave;
 
 // ============================================================
+//  Native management screens (staff/admin) — token-authed CRUD
+// ============================================================
+function mgScreen(title,sub,inner){ return `<div class="screen no-nav">${appbar(title,sub,{back:true,noBell:true})}<div class="screen-body" style="padding:12px 16px 24px">${inner}</div></div>`; }
+function mgRow(icon,title,sub,onclick,trail){ return `<div class="list-row" ${onclick?`onclick="${onclick}"`:''}><div class="ico">${icon}</div><div class="lbl">${esc(title)}${sub?`<div style="font-size:12px;color:var(--muted);font-weight:400">${sub}</div>`:''}</div>${trail||`<span class="arrow">${I.forward(16)}</span>`}</div>`; }
+function mgField(label,inner){ return `<div class="rfield"><label>${esc(label)}</label>${inner}</div>`; }
+const TA='width:100%;border-radius:14px;border:1px solid var(--line,#E2D9C5);background:#fff;padding:12px 14px;font-size:14px;font-family:inherit;color:var(--text,#1F2937);outline:none;box-sizing:border-box;resize:none';
+async function mgLoad(slot,path){ const d=await api(path); state[slot]=d||{}; render(); }
+function mgLoading(){ return '<div class="skel" style="height:60px;border-radius:12px;margin-bottom:8px"></div>'.repeat(3); }
+
+// ---- إضافاتي (my additions) ----
+function openMyGraves(){ state.mgMine=null; mgLoad('mgMine','/api/my-graves'); push('myGraves'); }
+function renderMyGraves(){
+  const d=state.mgMine; let body;
+  if(d==null) body=mgLoading();
+  else { const it=(d.results)||[]; body=it.length? `<div class="list-group">${it.map(g=>mgRow(I.grave(18),g.name,`${esc(g.section||'-')} · ${g.row_number||'-'}-${g.grave_number||'-'} · ${new Date(g.created_at).toLocaleDateString('ar-EG')}`,`openDetail(${g.id})`)).join('')}</div>` : `<div class="empty" style="padding:34px"><div class="ico">${I.grave(22)}</div><p>لم تُضِف أي قبر بعد</p></div>`; }
+  return mgScreen('إضافاتي','القبور اللي أضفتها',body);
+}
+
+// ---- تعديل قبر (edit grave) ----
+function openEditGrave(id){ closeDetail(); state.egGrave=null; mgLoad('egGrave','/api/grave/'+id); state.egId=id; push('editGrave'); }
+function renderEditGrave(){
+  const g=state.egGrave; if(g==null) return mgScreen('تعديل قبر','',mgLoading());
+  const days=['السبت','الاحد','الاثنين','الثلاثاء','الاربعاء','الخميس','الجمعة'];
+  const opt=(v,cur)=>`<option ${String(cur||'')===v?'selected':''}>${v}</option>`;
+  const inner=`
+    ${mgField('الاسم الكامل',`<input id="eg_name" value="${esc(g.name||'')}">`)}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${mgField('الجنس',`<select id="eg_gender"><option value="">— اختر —</option><option ${g.gender==='ذكر'?'selected':''}>ذكر</option><option value="انثى" ${g.gender==='انثى'?'selected':''}>أنثى</option></select>`)}
+      ${mgField('العمر',`<input id="eg_age" inputmode="numeric" value="${esc(g.age!=null?g.age:'')}">`)}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${mgField('يوم الوفاة',`<select id="eg_day"><option value="">— اختر —</option>${days.map(d=>opt(d,g.death_day)).join('')}</select>`)}
+      ${mgField('الميلادي',`<input id="eg_greg" value="${esc(g.death_date_gregorian||'')}">`)}
+    </div>
+    ${mgField('الهجري',`<input id="eg_hijri" value="${esc(g.death_date_hijri||'')}">`)}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      ${mgField('المنطقة',`<input id="eg_section" value="${esc(g.section||'')}">`)}
+      ${mgField('الصف',`<input id="eg_row" inputmode="numeric" value="${esc(g.row_number!=null?g.row_number:'')}">`)}
+      ${mgField('رقم القبر',`<input id="eg_num" inputmode="numeric" value="${esc(g.grave_number!=null?g.grave_number:'')}">`)}
+    </div>
+    ${mgField('ملاحظات',`<textarea id="eg_notes" rows="2" style="${TA}">${esc(g.notes||'')}</textarea>`)}
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="egSave()">💾 حفظ التعديل</button>
+    ${(state.auth&&(state.auth.role==='admin'||state.auth.role==='staff'))?`<button class="btn btn-secondary" style="width:100%;margin-top:8px;color:var(--danger,#DC2626)" onclick="egDelete()">حذف القبر</button>`:''}`;
+  return mgScreen('تعديل قبر',esc(g.name||''),inner);
+}
+async function egSave(){
+  const g=state.egGrave||{}, v=id=>(document.getElementById(id)||{}).value;
+  const name=(v('eg_name')||'').trim(); if(!name){ toast('❌ الاسم مطلوب'); return; }
+  const body={ name, gender:v('eg_gender')||null, age:v('eg_age')?parseInt(v('eg_age')):null, death_day:v('eg_day')||null,
+    death_date_gregorian:(v('eg_greg')||'').trim()||null, death_date_hijri:(v('eg_hijri')||'').trim()||null,
+    section:(v('eg_section')||'').trim()||null, row_number:v('eg_row')?parseInt(v('eg_row')):null, grave_number:v('eg_num')?parseInt(v('eg_num')):null,
+    latitude:g.latitude!=null?g.latitude:null, longitude:g.longitude!=null?g.longitude:null, notes:(v('eg_notes')||'').trim()||null };
+  const r=await apiSend('/api/grave/'+state.egId,'PUT',body);
+  if(r.ok&&r.data&&r.data.ok){ toast('✅ تم حفظ التعديل'); back(); } else toast('❌ '+((r.data&&r.data.error)||'فشل التعديل'));
+}
+async function egDelete(){ if(!confirm('حذف هذا القبر نهائياً؟'))return; const r=await apiSend('/api/grave/'+state.egId,'DELETE'); if(r.ok&&r.data&&r.data.ok){ toast('✅ تم الحذف'); back(); } else toast('❌ '+((r.data&&r.data.error)||'فشل الحذف')); }
+
+// ---- إعلانات الوفاة (announcements: list + add + delete) ----
+function openAnnManage(){ state.mgAnn=null; mgLoad('mgAnn','/api/announcements'); push('annManage'); }
+function renderAnnManage(){
+  const d=state.mgAnn; let body;
+  if(d==null) body=mgLoading();
+  else { const it=(d.results)||[]; body=it.length? `<div style="display:flex;flex-direction:column;gap:8px">${it.map(a=>`<div style="background:#fff;border:1px solid var(--line,#eee);border-radius:14px;padding:12px"><div style="display:flex;align-items:center;gap:8px"><div style="font-weight:700;color:var(--green,#0E4D3F);flex:1">${esc(a.deceased_name||a.name||'')}</div>${(state.auth&&state.auth.role==='admin')?`<button class="btn btn-secondary" style="padding:4px 10px;min-height:auto;color:var(--danger,#DC2626);font-size:12px" onclick="annDelete(${a.id})">حذف</button>`:''}</div>${a.funeral_info?`<div style="font-size:12px;color:var(--muted);margin-top:3px">الصلاة: ${esc(a.funeral_info)}</div>`:''}<div style="font-size:11px;color:var(--muted-2);margin-top:3px">${timeAgo(a.created_at)}</div></div>`).join('')}</div>` : `<div class="empty" style="padding:30px"><div class="ico">${I.megaphone(22)}</div><p>لا يوجد إعلانات</p></div>`; }
+  return mgScreen('إعلانات الوفاة','إضافة وإدارة',`<button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="push('annForm')">${I.plus(16)} إعلان وفاة جديد</button>${body}`);
+}
+function renderAnnForm(){
+  const inner=`
+    ${mgField('اسم المتوفّى *',`<input id="an_name" placeholder="الاسم الكامل">`)}
+    ${mgField('الكنية (أبو/أم فلان)',`<input id="an_kunya">`)}
+    ${mgField('وقت/مكان الصلاة',`<input id="an_funeral" placeholder="مثال: عصر اليوم بمسجد...">`)}
+    ${mgField('الدفن',`<input id="an_burial" placeholder="مقبرة صفوى">`)}
+    ${mgField('عزاء الرجال',`<input id="an_cmen">`)}
+    ${mgField('عزاء النساء',`<input id="an_cwomen">`)}
+    ${mgField('تفاصيل إضافية',`<textarea id="an_msg" rows="2" style="${TA}"></textarea>`)}
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="annSave()">📢 نشر الإعلان</button>`;
+  return mgScreen('إعلان وفاة جديد','',inner);
+}
+async function annSave(){
+  const v=id=>(document.getElementById(id)||{}).value;
+  const name=(v('an_name')||'').trim(); if(!name){ toast('❌ اسم المتوفّى مطلوب'); return; }
+  const body={ deceased_name:name, kunya:(v('an_kunya')||'').trim()||null, funeral_info:(v('an_funeral')||'').trim()||null, burial_info:(v('an_burial')||'').trim()||null, condolence_men:(v('an_cmen')||'').trim()||null, condolence_women:(v('an_cwomen')||'').trim()||null, message:(v('an_msg')||'').trim()||null, is_active:true };
+  const r=await apiSend('/api/announcements','POST',body);
+  if(r.ok&&r.data&&(r.data.ok||r.data.id)){ toast('✅ تم نشر الإعلان'); state.mgAnn=null; state.announcements=null; back(); mgLoad('mgAnn','/api/announcements'); } else toast('❌ '+((r.data&&r.data.error)||'فشل النشر'));
+}
+async function annDelete(id){ if(!confirm('حذف هذا الإعلان؟'))return; const r=await apiSend('/api/announcement/'+id,'DELETE'); if(r.ok&&r.data&&r.data.ok){ toast('✅ تم الحذف'); state.mgAnn=null; mgLoad('mgAnn','/api/announcements'); } else toast('❌ '+((r.data&&r.data.error)||'فشل الحذف')); }
+window.openMyGraves=openMyGraves; window.openEditGrave=openEditGrave; window.egSave=egSave; window.egDelete=egDelete; window.openAnnManage=openAnnManage; window.annSave=annSave; window.annDelete=annDelete;
+
+function roleBadge(r){ const c={admin:'#0E4D3F',staff:'#B8860B',volunteer:'#6B7280'}; return `<span style="background:${c[r]||'#888'};color:#fff;font-size:11px;padding:3px 10px;border-radius:999px">${ROLE_LABEL[r]||r}</span>`; }
+
+// ---- المستخدمون (users: list + add + role + delete) — admin ----
+function openUsersManage(){ state.mgUsers=null; mgLoad('mgUsers','/api/users'); push('usersManage'); }
+function renderUsersManage(){
+  const d=state.mgUsers; let body;
+  if(d==null) body=mgLoading();
+  else { const it=(d.results)||[]; const me=state.auth&&state.auth.id; body=`<div style="display:flex;flex-direction:column;gap:8px">${it.map(u=>`<div style="background:#fff;border:1px solid var(--line,#eee);border-radius:14px;padding:12px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><div style="font-weight:600">${esc(u.full_name||u.username)}</div><div style="font-size:12px;color:var(--muted)">@${esc(u.username)} · ${u.graves_added||0} قبر</div></div>${u.id===me?roleBadge(u.role):`<select onchange="userSetRole(${u.id},this.value)" style="border:1px solid var(--line,#E2D9C5);border-radius:10px;padding:6px 8px;font-family:inherit;font-size:13px"><option value="volunteer" ${u.role==='volunteer'?'selected':''}>متطوّع</option><option value="staff" ${u.role==='staff'?'selected':''}>موظف</option><option value="admin" ${u.role==='admin'?'selected':''}>مدير</option></select>`}</div>${u.id!==me?`<button class="btn btn-secondary" style="width:100%;margin-top:8px;padding:6px;min-height:auto;color:var(--danger,#DC2626);font-size:12px" onclick="userDelete(${u.id})">حذف المستخدم</button>`:''}</div>`).join('')}</div>`; }
+  return mgScreen('المستخدمون والصلاحيات','إضافة موظفين وتغيير الأدوار',`<button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="push('userForm')">${I.plus(16)} إضافة مستخدم</button>${body}`);
+}
+function renderUserForm(){
+  return mgScreen('إضافة مستخدم','',`
+    ${mgField('اسم المستخدم *',`<input id="us_user" autocapitalize="none" placeholder="username">`)}
+    ${mgField('الاسم الكامل',`<input id="us_name" placeholder="الاسم">`)}
+    ${mgField('كلمة المرور * (١٢ حرف فأكثر)',`<input id="us_pass" type="password" placeholder="••••••••••••">`)}
+    ${mgField('الدور',`<select id="us_role"><option value="volunteer">متطوّع</option><option value="staff">موظف</option><option value="admin">مدير</option></select>`)}
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="userSave()">➕ إنشاء المستخدم</button>`);
+}
+async function userSave(){
+  const v=id=>(document.getElementById(id)||{}).value;
+  const u=(v('us_user')||'').trim(), p=(v('us_pass')||'');
+  if(!u||!p){ toast('❌ اسم المستخدم وكلمة المرور مطلوبان'); return; }
+  if(p.length<12){ toast('❌ كلمة المرور ١٢ حرف على الأقل'); return; }
+  const r=await apiSend('/api/users','POST',{username:u,password:p,full_name:(v('us_name')||'').trim()||null,role:v('us_role')||'volunteer'});
+  if(r.ok&&r.data&&(r.data.ok||r.data.id)){ toast('✅ تم إنشاء المستخدم'); state.mgUsers=null; back(); mgLoad('mgUsers','/api/users'); } else toast('❌ '+((r.data&&r.data.error)||'فشل الإنشاء'));
+}
+async function userSetRole(id,role){ const r=await apiSend('/api/users/'+id,'PUT',{role}); toast(r.ok&&r.data&&r.data.ok?'✅ تم تغيير الدور':'❌ '+((r.data&&r.data.error)||'فشل')); state.mgUsers=null; mgLoad('mgUsers','/api/users'); }
+async function userDelete(id){ if(!confirm('حذف هذا المستخدم؟'))return; const r=await apiSend('/api/users/'+id,'DELETE'); if(r.ok&&r.data&&r.data.ok){ toast('✅ تم الحذف'); state.mgUsers=null; mgLoad('mgUsers','/api/users'); } else toast('❌ '+((r.data&&r.data.error)||'فشل الحذف')); }
+
+// ---- الإعدادات والبانر (settings) — admin ----
+function openSettings(){ state.mgSettings=null; mgLoad('mgSettings','/api/settings'); push('settings'); }
+function sGet(k){ const s=state.mgSettings||{}; return (s[k]&&s[k].value!=null)?s[k].value:''; }
+function renderSettings(){
+  if(state.mgSettings==null) return mgScreen('الإعدادات والبانر','',mgLoading());
+  return mgScreen('الإعدادات والبانر','المحتوى المتحكَّم به',`
+    ${mgField('شريط البانر (كل سطر = شريحة)',`<textarea id="st_banner" rows="4" style="${TA}">${esc(sGet('top_banner_items'))}</textarea>`)}
+    ${mgField('نص التنبيه',`<textarea id="st_notice" rows="2" style="${TA}">${esc(sGet('notice_text'))}</textarea>`)}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${mgField('نوع التنبيه',`<select id="st_ntype"><option value="info" ${sGet('notice_type')!=='urgent'?'selected':''}>عادي</option><option value="urgent" ${sGet('notice_type')==='urgent'?'selected':''}>عاجل</option></select>`)}
+      ${mgField('تفعيل التنبيه',`<select id="st_nen"><option value="0" ${sGet('notice_enabled')!=='1'?'selected':''}>مغلق</option><option value="1" ${sGet('notice_enabled')==='1'?'selected':''}>مفعّل</option></select>`)}
+    </div>
+    ${mgField('ملاحظة التذييل',`<input id="st_footer" value="${esc(sGet('footer_note'))}">`)}
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="settingsSave()">💾 حفظ الإعدادات</button>`);
+}
+async function settingsSave(){
+  const v=id=>(document.getElementById(id)||{}).value;
+  const r=await apiSend('/api/settings','POST',{ top_banner_items:v('st_banner')||'', notice_text:v('st_notice')||'', notice_type:v('st_ntype')||'info', notice_enabled:v('st_nen')||'0', footer_note:v('st_footer')||'' });
+  if(r.ok&&r.data&&r.data.ok){ toast('✅ تم حفظ الإعدادات'); state.banner=null; back(); } else toast('❌ '+((r.data&&r.data.error)||'فشل الحفظ'));
+}
+
+// ---- سجل النشاط (audit) — admin ----
+function openAudit(){ state.mgAudit=null; mgLoad('mgAudit','/api/audit'); push('audit'); }
+function renderAudit(){
+  const d=state.mgAudit; let body;
+  if(d==null) body=mgLoading();
+  else { const it=(d.results)||[]; const A={login:'دخول',create:'إضافة',update:'تعديل',delete:'حذف'}; body=it.length? `<div style="display:flex;flex-direction:column;gap:6px">${it.slice(0,120).map(a=>`<div style="background:#fff;border:1px solid var(--line,#eee);border-radius:12px;padding:10px 12px;display:flex;gap:8px"><div style="flex:1;font-size:13px"><b>${esc(a.full_name||a.username||'؟')}</b> · ${esc(A[a.action]||a.action)} ${esc(a.entity_type||'')}${a.entity_id?(' #'+a.entity_id):''}</div><div style="font-size:11px;color:var(--muted-2);white-space:nowrap">${timeAgo(a.created_at)}</div></div>`).join('')}</div>` : `<div class="empty" style="padding:30px"><div class="ico">${I.clock(22)}</div><p>لا يوجد سجل</p></div>`; }
+  return mgScreen('سجل النشاط','آخر العمليات',body);
+}
+
+// ---- بلاغات الوفاة (death reports) — admin ----
+function openReports(){ state.mgReports=null; mgLoad('mgReports','/api/death-reports'); push('reports'); }
+function renderReports(){
+  const d=state.mgReports; let body;
+  if(d==null) body=mgLoading();
+  else { const it=(d.results)||[]; body=it.length? `<div style="display:flex;flex-direction:column;gap:8px">${it.map(r=>`<div style="background:#fff;border:1px solid var(--line,#eee);border-radius:14px;padding:12px"><div style="font-weight:600">${esc(r.deceased_name||'-')}</div><div style="font-size:12px;color:var(--muted)">المبلّغ: ${esc(r.reporter_name||'-')} · ${esc(r.reporter_phone||'')}</div><div style="font-size:11px;color:var(--muted-2);margin-top:3px">${timeAgo(r.created_at)}</div></div>`).join('')}</div>` : `<div class="empty" style="padding:30px"><div class="ico">${I.flag(22)}</div><p>لا يوجد بلاغات</p></div>`; }
+  return mgScreen('بلاغات الوفاة','بلاغات العائلات',body);
+}
+window.openUsersManage=openUsersManage; window.userSave=userSave; window.userSetRole=userSetRole; window.userDelete=userDelete; window.openSettings=openSettings; window.settingsSave=settingsSave; window.openAudit=openAudit; window.openReports=openReports;
+
+// ============================================================
 //  Router
 // ============================================================
 const TABS=['home','map','announcements','more'];
-const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport,login:renderLogin,panel:renderPanel,addGrave:renderAddGrave};
+const RENDER={home:renderHome,map:renderMap,announcements:renderAnnouncements,more:renderMore,search:renderSearch,photos:renderPhotos,contacts:renderContacts,report:renderReport,login:renderLogin,panel:renderPanel,addGrave:renderAddGrave,myGraves:renderMyGraves,editGrave:renderEditGrave,annManage:renderAnnManage,annForm:renderAnnForm,usersManage:renderUsersManage,userForm:renderUserForm,settings:renderSettings,audit:renderAudit,reports:renderReports};
 
 function render(){
   const view=state.stack.length?state.stack[state.stack.length-1]:state.tab;
