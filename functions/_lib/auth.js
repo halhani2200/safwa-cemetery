@@ -74,12 +74,22 @@ export async function createSession(env, userId, request) {
     return sessionId;
 }
 
-export async function getUserFromSession(env, request) {
+// Extract the session id from either the Authorization: Bearer header (native app
+// token auth) or the session cookie (web/Android same-origin). The native iOS app
+// can't rely on cross-origin cookies, so it sends the session id as a Bearer token.
+export function extractSessionId(request) {
+    const authHeader = request.headers.get('Authorization') || '';
+    const bearer = authHeader.match(/^Bearer\s+([a-f0-9]+)$/i);
+    if (bearer) return bearer[1];
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/session=([a-f0-9]+)/);
-    if (!match) return null;
+    return match ? match[1] : null;
+}
 
-    const sessionId = match[1];
+export async function getUserFromSession(env, request) {
+    const sessionId = extractSessionId(request);
+    if (!sessionId) return null;
+
     const result = await env.DB.prepare(`
         SELECT users.id, users.username, users.full_name, users.role, users.is_active,
                sessions.expires_at
@@ -104,10 +114,9 @@ export async function getUserFromSession(env, request) {
 }
 
 export async function deleteSession(env, request) {
-    const cookie = request.headers.get('Cookie') || '';
-    const match = cookie.match(/session=([a-f0-9]+)/);
-    if (!match) return;
-    await env.DB.prepare('DELETE FROM sessions WHERE id = ?').bind(match[1]).run();
+    const sessionId = extractSessionId(request);
+    if (!sessionId) return;
+    await env.DB.prepare('DELETE FROM sessions WHERE id = ?').bind(sessionId).run();
 }
 
 export function sessionCookieHeader(sessionId) {
@@ -121,9 +130,12 @@ export function clearSessionCookieHeader() {
 
 // ----- Auth middleware -----
 export async function requireAuth(env, request, allowedRoles = null) {
-    // CSRF defense: for state-changing requests, require Origin to match Host.
-    // SameSite=Strict cookies provide primary protection; this is defense-in-depth.
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
+    // CSRF defense (cookie auth only): for state-changing requests, require Origin to
+    // match Host. Token (Bearer) auth is immune to CSRF — tokens aren't auto-sent by
+    // browsers — and the native app legitimately calls cross-origin, so skip the
+    // Origin check whenever a Bearer token is present.
+    const hasBearer = /^Bearer\s+[a-f0-9]+$/i.test(request.headers.get('Authorization') || '');
+    if (!hasBearer && request.method !== 'GET' && request.method !== 'HEAD') {
         const origin = request.headers.get('Origin');
         if (origin) {
             try {

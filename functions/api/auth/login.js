@@ -55,6 +55,9 @@ export async function onRequestPost(context) {
         return jsonResponse(
             {
                 ok: true,
+                // Token for native (iOS) clients that can't use cross-origin cookies.
+                // Web/Android keep using the Set-Cookie session below.
+                token: sessionId,
                 user: {
                     id: user.id,
                     username: user.username,

@@ -133,10 +133,10 @@ const esc = (s) => s==null?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 const fmtDate = (s) => { if(!s)return''; const p=String(s).trim().split(/[\/\-\\.]/); if(p.length!==3)return s; const[d,m,y]=p.map(x=>x.trim()); if(!/^\d+$/.test(d)||!/^\d+$/.test(m)||!/^\d+$/.test(y))return s; return `${d.padStart(2,'0')} / ${m.padStart(2,'0')} / ${y}`; };
 const timeAgo = (ts) => { if(!ts)return''; const d=new Date(ts),diff=(Date.now()-d.getTime())/1000; if(diff<60)return'الآن'; if(diff<3600)return Math.floor(diff/60)+' د'; if(diff<86400)return Math.floor(diff/3600)+' س'; if(diff<604800)return Math.floor(diff/86400)+' ي'; return d.toLocaleDateString('ar-EG'); };
 const isFresh = (ts) => ts && (Date.now()-new Date(ts).getTime())<86400000;
-async function api(path){ try{const r=await fetch((window.API_BASE||'')+path);return await r.json();}catch(e){return{error:e.message};} }
+async function api(path){ try{const h={};if(state.token)h['Authorization']='Bearer '+state.token;const r=await fetch((window.API_BASE||'')+path,{credentials:'include',headers:h});return await r.json();}catch(e){return{error:e.message};} }
 
 // ---------- App State ----------
-const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null, auth:null, panelStats:null };
+const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null, auth:null, panelStats:null, token:null };
 // Death-report entry is FULLY DISABLED for the first store release (no sensitive data collected,
 // simplifies Play Data Safety). Re-enable later — once Hosseiniya contacts + staff review are ready —
 // by restoring the flag check below. Feature code is intact; only this gate is hard-off.
@@ -646,7 +646,8 @@ window.openReport=openReport; window.reportNext=reportNext; window.reportBack=re
 const ROLE_LABEL={admin:'مدير',staff:'موظف',volunteer:'متطوّع'};
 async function apiSend(path, method, body){
   try{
-    const r=await fetch((window.API_BASE||'')+path,{method:method||'POST',headers:body?{'Content-Type':'application/json'}:{},credentials:'include',body:body?JSON.stringify(body):undefined});
+    const h=body?{'Content-Type':'application/json'}:{}; if(state.token)h['Authorization']='Bearer '+state.token;
+    const r=await fetch((window.API_BASE||'')+path,{method:method||'POST',headers:h,credentials:'include',body:body?JSON.stringify(body):undefined});
     const d=await r.json().catch(()=>({})); return {ok:r.ok,status:r.status,data:d};
   }catch(e){ return {ok:false,status:0,data:{error:e.message}}; }
 }
@@ -675,10 +676,10 @@ async function doLogin(){
   if(!u||!p){ fail('أدخل اسم المستخدم وكلمة المرور'); return; }
   if(btn){btn.disabled=true;btn.textContent='جارٍ الدخول…';}
   const res=await apiSend('/api/auth/login','POST',{username:u,password:p});
-  if(res.ok&&res.data&&res.data.user){ state.auth=res.data.user; state.panelStats=null; state.stack=['panel']; render(); loadPanelStats(); }
+  if(res.ok&&res.data&&res.data.user){ state.auth=res.data.user; state.token=res.data.token||state.token||null; if(state.token){try{localStorage.setItem('safwa_token',state.token);}catch(e){}} state.panelStats=null; state.stack=['panel']; render(); loadPanelStats(); }
   else fail((res.data&&res.data.error)||'بيانات الدخول غير صحيحة');
 }
-async function doLogout(){ try{ await apiSend('/api/auth/logout','POST'); }catch(e){} state.auth=null; state.panelStats=null; state.stack=[]; state.tab='home'; render(); toast('تم تسجيل الخروج'); }
+async function doLogout(){ try{ await apiSend('/api/auth/logout','POST'); }catch(e){} state.auth=null; state.token=null; try{localStorage.removeItem('safwa_token');}catch(e){} state.panelStats=null; state.stack=[]; state.tab='home'; render(); toast('تم تسجيل الخروج'); }
 
 async function loadPanelStats(){
   const s=await api('/api/stats'); state.panelStats=s||{};
@@ -820,6 +821,7 @@ async function loadData(){
 // initial render + splash
 document.getElementById('app').innerHTML=`<div class="splash"><div class="crest">${I.crest(56,'#D4A93A')}</div><h1>مقبرة صفوى</h1><div class="sub">دليل أهالي صفوى لزيارة المتوفين</div><div class="loader">جارٍ التحميل…</div></div>`;
 setTimeout(()=>{
+  try{ state.token = localStorage.getItem('safwa_token') || null; }catch(e){}
   render();
   setupHiddenEntrance();
   loadData();
