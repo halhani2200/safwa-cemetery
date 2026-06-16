@@ -136,7 +136,7 @@ const isFresh = (ts) => ts && (Date.now()-new Date(ts).getTime())<86400000;
 async function api(path){ try{const h={};if(state.token)h['Authorization']='Bearer '+state.token;const r=await fetch((window.API_BASE||'')+path,{credentials:'include',headers:h});return await r.json();}catch(e){return{error:e.message};} }
 
 // ---------- App State ----------
-const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null, auth:null, panelStats:null, token:null };
+const state = { tab:'home', stack:[], graves:null, announcements:null, banner:null, stats:null, onThisDay:null, otdToday:null, auth:null, panelStats:null, token:null, mgGraves:null, gmq:'', gmGender:'', gmSection:'', gmYear:'', gmSort:'id', gmDir:'asc' };
 // Death-report entry is FULLY DISABLED for the first store release (no sensitive data collected,
 // simplifies Play Data Safety). Re-enable later — once Hosseiniya contacts + staff review are ready —
 // by restoring the flag check below. Feature code is intact; only this gate is hard-off.
@@ -1050,22 +1050,113 @@ function renderReports(){
 }
 window.openUsersManage=openUsersManage; window.userSave=userSave; window.userSetRole=userSetRole; window.userDelete=userDelete; window.openSettings=openSettings; window.settingsSave=settingsSave; window.openAudit=openAudit; window.openReports=openReports;
 
-// ---- إدارة القبور (browse all graves + edit) — admin/staff ----
-function openGravesManage(){ state.mgGraves=null; state.gmq=''; mgLoad('mgGraves','/api/graves'); push('gravesManage'); }
+// ---- إدارة القبور (browse + filter + sort + export + edit) — admin/staff ----
+function openGravesManage(){ state.mgGraves=null; state.gmq=''; state.gmGender=''; state.gmSection=''; state.gmYear=''; state.gmSort='id'; state.gmDir='asc'; mgLoad('mgGraves','/api/graves'); push('gravesManage'); }
+
+function gmExtractYear(date){ if(!date) return ''; const m=String(date).match(/(\d{4})/); return m?m[1]:''; }
+function gmDateSortable(str){
+  if(!str) return -Infinity; const s=String(str).trim();
+  let m=s.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})/);
+  if(m){ let d=parseInt(m[1]),mo=parseInt(m[2]),y=parseInt(m[3]); if(y<100)y+=2000; return y*10000+mo*100+d; }
+  m=s.match(/(\d{4})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/);
+  if(m) return parseInt(m[1])*10000+parseInt(m[2])*100+parseInt(m[3]);
+  m=s.match(/(\d{4})/); if(m) return parseInt(m[1])*10000;
+  return -Infinity;
+}
+
+// filtered + sorted list (shared by the list view and the export)
+function gmFiltered(){
+  const d=state.mgGraves; const all=(d&&d.results)||[];
+  const q=(state.gmq||'').trim().toLowerCase();
+  const gender=state.gmGender||'', section=state.gmSection||'', year=state.gmYear||'';
+  let list=all.filter(g=>{
+    if(q){
+      const loc=((g.section||'')+'-'+(g.row_number||'')+'-'+(g.grave_number||'')).toLowerCase();
+      const hit=((g.name||'').toLowerCase().indexOf(q)>=0)||(loc.indexOf(q)>=0)||((g.grave_reference||'').toLowerCase().indexOf(q)>=0)||(String(g.id)===q);
+      if(!hit) return false;
+    }
+    if(gender && g.gender!==gender) return false;
+    if(section && g.section!==section) return false;
+    if(year && gmExtractYear(g.death_date_gregorian)!==year) return false;
+    return true;
+  });
+  const col=state.gmSort||'id', mul=(state.gmDir==='desc')?-1:1;
+  list.sort((a,b)=>{
+    let av,bv;
+    if(col==='location'){
+      av=(a.section||'')+' '+String(a.row_number||0).padStart(3,'0')+' '+String(a.grave_number||0).padStart(4,'0');
+      bv=(b.section||'')+' '+String(b.row_number||0).padStart(3,'0')+' '+String(b.grave_number||0).padStart(4,'0');
+    } else if(col==='death_date_gregorian'){
+      av=gmDateSortable(a.death_date_gregorian); bv=gmDateSortable(b.death_date_gregorian);
+    } else if(col==='age'||col==='id'){
+      av=a[col]!=null?Number(a[col]):-Infinity; bv=b[col]!=null?Number(b[col]):-Infinity;
+    } else {
+      av=(a[col]||'').toString(); bv=(b[col]||'').toString();
+    }
+    if(av<bv) return -1*mul; if(av>bv) return 1*mul; return 0;
+  });
+  return list;
+}
+
 function gmRows(){
-  const d=state.mgGraves; if(d==null) return mgLoading();
-  const all=(d.results)||[]; const q=(state.gmq||'').trim();
-  let list=all;
-  if(q){ list=all.filter(g=>((g.name||'').indexOf(q)>=0)||(((g.section||'')+'-'+(g.row_number||'')+'-'+(g.grave_number||'')).indexOf(q)>=0)); }
+  if(state.mgGraves==null) return mgLoading();
+  const total=((state.mgGraves.results)||[]).length;
+  const list=gmFiltered();
   if(!list.length) return `<div class="empty" style="padding:30px"><div class="ico">${I.search(22)}</div><p>لا نتائج</p></div>`;
   const shown=list.slice(0,150);
-  return `<div style="font-size:12px;color:var(--muted);padding:0 2px 8px">${list.length} قبر${list.length>150?' — يُعرض أول 150، ابحث للتضييق':''}</div><div class="list-group">${shown.map(g=>mgRow(I.grave(18),g.name,`${esc(g.section||'-')} · ${g.row_number||'-'}-${g.grave_number||'-'}`,`openEditGrave(${g.id})`)).join('')}</div>`;
+  const label=(list.length===total)?`${total} قبر`:`${list.length} من ${total} قبر`;
+  return `<div style="font-size:12px;color:var(--muted);padding:0 2px 8px">${label}${list.length>150?' — يُعرض أول 150، ضيّق الفرز':''}</div><div class="list-group">${shown.map(g=>mgRow(I.grave(18),g.name,`${esc(g.section||'-')} · ${g.row_number||'-'}-${g.grave_number||'-'}${g.death_date_gregorian?(' · '+esc(g.death_date_gregorian)):''}`,`openEditGrave(${g.id})`)).join('')}</div>`;
 }
+
 function renderGravesManage(){
-  return `<div class="screen no-nav">${appbar('إدارة القبور','تصفّح وتعديل كل القبور',{back:true,noBell:true})}<div class="screen-body" style="padding:12px 14px"><div class="search" style="margin-bottom:12px">${I.search(17)}<input id="gm_q" placeholder="ابحث بالاسم أو المنطقة" value="${esc(state.gmq||'')}"></div><div id="gm_list">${gmRows()}</div></div></div>`;
+  const d=state.mgGraves; const all=(d&&d.results)||[];
+  const sections=[...new Set(all.map(g=>g.section).filter(Boolean))].sort();
+  const years=[...new Set(all.map(g=>gmExtractYear(g.death_date_gregorian)).filter(Boolean))].sort().reverse();
+  const ss='padding:7px 10px;border:1px solid var(--line,#e6e6e6);border-radius:10px;background:#fff;font-family:inherit;font-size:13px;color:var(--text,#1f2937);flex-shrink:0';
+  const opt=(v,l,cur)=>`<option value="${esc(v)}"${String(cur||'')===String(v)?' selected':''}>${esc(l)}</option>`;
+  const genderSel=`<select id="gm_gender" onchange="gmFilter()" style="${ss}">${opt('','الجنس: الكل',state.gmGender)}${opt('ذكر','ذكر',state.gmGender)}${opt('انثى','أنثى',state.gmGender)}</select>`;
+  const sectionSel=`<select id="gm_section" onchange="gmFilter()" style="${ss}">${opt('','المنطقة: الكل',state.gmSection)}${sections.map(s=>opt(s,'المنطقة '+s,state.gmSection)).join('')}</select>`;
+  const yearSel=`<select id="gm_year" onchange="gmFilter()" style="${ss}">${opt('','السنة: الكل',state.gmYear)}${years.map(y=>opt(y,y,state.gmYear)).join('')}</select>`;
+  const sortSel=`<select id="gm_sort" onchange="gmFilter()" style="${ss}">${opt('id','ترتيب: #',state.gmSort)}${opt('name','الاسم',state.gmSort)}${opt('location','الموقع',state.gmSort)}${opt('death_date_gregorian','تاريخ الوفاة',state.gmSort)}${opt('age','العمر',state.gmSort)}</select>`;
+  const dirBtn=`<button id="gm_dir" onclick="gmDir()" style="${ss};cursor:pointer;font-weight:600">${(state.gmDir==='desc')?'▼ تنازلي':'▲ تصاعدي'}</button>`;
+  return `<div class="screen no-nav">${appbar('إدارة القبور','تصفّح · فرز · تصدير',{back:true,noBell:true})}<div class="screen-body" style="padding:12px 14px"><div class="search" style="margin-bottom:10px">${I.search(17)}<input id="gm_q" placeholder="ابحث بالاسم أو الرقم أو المنطقة" value="${esc(state.gmq||'')}"></div><div style="display:flex;gap:8px;overflow-x:auto;padding:0 14px 8px;margin:0 -14px 4px;-webkit-overflow-scrolling:touch">${genderSel}${sectionSel}${yearSel}${sortSel}${dirBtn}</div><div style="display:flex;gap:8px;margin-bottom:10px"><button onclick="gmExport()" style="flex:1;padding:10px;border:none;border-radius:10px;background:#0E7C3A;color:#fff;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">📊 تصدير Excel</button><button onclick="gmClear()" style="flex:1;padding:10px;border:1px solid var(--line,#e6e6e6);border-radius:10px;background:#fff;color:var(--text,#1f2937);font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">↻ مسح الفلاتر</button></div><div id="gm_list">${gmRows()}</div></div></div>`;
 }
-function gmFilter(){ const inp=document.getElementById('gm_q'); state.gmq=inp?inp.value:''; const l=document.getElementById('gm_list'); if(l)l.innerHTML=gmRows(); }
-window.openGravesManage=openGravesManage;
+
+function gmFilter(){
+  const v=id=>{const e=document.getElementById(id);return e?e.value:'';};
+  state.gmq=v('gm_q'); state.gmGender=v('gm_gender'); state.gmSection=v('gm_section'); state.gmYear=v('gm_year'); state.gmSort=v('gm_sort')||'id';
+  const l=document.getElementById('gm_list'); if(l)l.innerHTML=gmRows();
+}
+function gmDir(){ state.gmDir=(state.gmDir==='desc')?'asc':'desc'; const b=document.getElementById('gm_dir'); if(b)b.textContent=(state.gmDir==='desc')?'▼ تنازلي':'▲ تصاعدي'; gmFilter(); }
+function gmClear(){ state.gmq=''; state.gmGender=''; state.gmSection=''; state.gmYear=''; state.gmSort='id'; state.gmDir='asc'; render(); }
+
+async function gmExport(){
+  const list=gmFiltered();
+  if(!list.length){ toast('لا توجد بيانات للتصدير'); return; }
+  const cols=[['#','id'],['الاسم','name'],['الجنس','gender'],['العمر','age'],['يوم الوفاة','death_day'],['التاريخ الميلادي','death_date_gregorian'],['التاريخ الهجري','death_date_hijri'],['المنطقة','section'],['الصف','row_number'],['رقم القبر','grave_number'],['المرجع','grave_reference'],['مستلم الجنازة','receiver_name'],['صلة القرابة','receiver_relationship'],['جوال المستلم','receiver_phone'],['خط العرض','latitude'],['خط الطول','longitude'],['ملاحظات','notes']];
+  const cell=v=>{ v=(v==null)?'':String(v); return /[",\n\r]/.test(v)?('"'+v.replace(/"/g,'""')+'"'):v; };
+  const lines=[cols.map(c=>cell(c[0])).join(',')];
+  list.forEach(g=>lines.push(cols.map(c=>cell(g[c[1]])).join(',')));
+  const csv='﻿'+lines.join('\r\n');
+  const dt=new Date(); const today=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  const fname='مقبرة-صفوى-'+today+'.csv';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  try{
+    const file=new File([blob],fname,{type:'text/csv'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'قبور مقبرة صفوى ('+list.length+')'});
+      return;
+    }
+  }catch(e){ if(e&&e.name==='AbortError') return; }
+  try{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); a.remove(); }catch(_){} },1500);
+    toast('تم تصدير '+list.length+' قبر');
+  }catch(e){ toast('تعذّر التصدير على هذا الجهاز'); }
+}
+
+window.openGravesManage=openGravesManage; window.gmFilter=gmFilter; window.gmDir=gmDir; window.gmClear=gmClear; window.gmExport=gmExport;
 
 // ============================================================
 //  Router
