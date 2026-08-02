@@ -59,10 +59,8 @@
                 if (perm.receive !== 'granted') {
                     return { success: false, error: 'تم رفض إذن الإشعارات' };
                 }
-                await Push.register();
-
-                return new Promise((resolve) => {
-                    const tokenHandler = Push.addListener('registration', async (token) => {
+                return new Promise(async (resolve) => {
+                    const tokenHandler = await Push.addListener('registration', async (token) => {
                         // Send token to backend
                         try {
                             const r = await fetch((window.API_BASE || '') + '/api/push/subscribe-fcm', {
@@ -74,16 +72,28 @@
                                     app_version: '1.0.0'
                                 })
                             });
-                            const d = await r.json();
-                            resolve({ success: true, token: token.value, registered: d.ok });
+                            const d = await r.json().catch(() => ({}));
+                            if (!r.ok || !d.ok) {
+                                resolve({ success: false, error: d.error || 'تعذر حفظ جهاز الإشعارات' });
+                            } else {
+                                resolve({ success: true, token: token.value, registered: true });
+                            }
                         } catch (e) {
                             resolve({ success: false, error: e.message });
                         }
                         (await tokenHandler).remove();
+                        (await errHandler).remove();
                     });
 
-                    const errHandler = Push.addListener('registrationError', async (e) => {
+                    const errHandler = await Push.addListener('registrationError', async (e) => {
                         resolve({ success: false, error: e.error || 'فشل تسجيل الإشعارات' });
+                        (await tokenHandler).remove();
+                        (await errHandler).remove();
+                    });
+
+                    Push.register().catch(async (e) => {
+                        resolve({ success: false, error: e.message });
+                        (await tokenHandler).remove();
                         (await errHandler).remove();
                     });
                 });

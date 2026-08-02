@@ -7,6 +7,7 @@ yarn-error.log*
 
 # Wrangler / Cloudflare
 .wrangler/
+.wrangler-tmp-*/
 .dev.vars
 .env
 .env.local

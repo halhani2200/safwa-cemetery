@@ -1,5 +1,6 @@
 import { jsonResponse, requireAuth, logAudit } from '../../_lib/auth.js';
 import { sendPushToAll } from '../../_lib/webpush.js';
+import { sendNativePushToAll } from '../../_lib/native-push.js';
 
 // PUT: update announcement (admin only)
 export async function onRequestPut(context) {
@@ -19,11 +20,19 @@ export async function onRequestPut(context) {
                 grave_id = ?, is_active = ?, expires_at = ?, updated_at = ?
             WHERE id = ?
         `).bind(
-            body.deceased_name, body.kunya || null, body.family || null, body.message || null,
-            body.funeral_info || null, body.burial_info || null,
-            body.condolence_men || null, body.condolence_women || null,
-            body.grave_id || null, body.is_active === false ? 0 : 1, body.expires_at || null,
-            new Date().toISOString(), id
+            body.deceased_name,
+            body.kunya || null,
+            body.family || null,
+            body.message || null,
+            body.funeral_info || null,
+            body.burial_info || null,
+            body.condolence_men || null,
+            body.condolence_women || null,
+            body.grave_id || null,
+            body.is_active === false ? 0 : 1,
+            body.expires_at || null,
+            new Date().toISOString(),
+            id
         ).run();
         await logAudit(env, auth.user.id, 'update', 'announcement', id, { name: body.deceased_name }, request);
 
@@ -31,18 +40,30 @@ export async function onRequestPut(context) {
         if (body.send_notification) {
             const payload = {
                 title: 'إعلان وفاة',
-                body: `إنا لله وإنا إليه راجعون — ${body.deceased_name}${body.kunya ? ' (' + body.kunya + ')' : ''}`,
+                body: `إنا لله وإنا إليه راجعون - ${body.deceased_name}${body.kunya ? ' (' + body.kunya + ')' : ''}`,
                 url: '/',
                 tag: `announcement-${id}`,
                 announcement_id: id
             };
-            pushResult = await sendPushToAll(env, payload);
+            const [web, native] = await Promise.all([
+                sendPushToAll(env, payload).catch(e => ({ sent: 0, failed: 0, removed: 0, error: e.message })),
+                sendNativePushToAll(env, {
+                    title: payload.title,
+                    body: payload.body
+                }, { url: payload.url, type: 'announcement', announcement_id: id })
+            ]);
+            pushResult = {
+                web,
+                native,
+                total_sent: (web.sent || 0) + (native.total_sent || 0)
+            };
             await env.DB.prepare('UPDATE announcements SET notification_sent = 1 WHERE id = ?').bind(id).run();
         }
 
         return jsonResponse({ ok: true, push: pushResult });
     } catch (e) {
-        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
+        console.error(e);
+        return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -60,6 +81,7 @@ export async function onRequestDelete(context) {
         await logAudit(env, auth.user.id, 'delete', 'announcement', id, {}, request);
         return jsonResponse({ ok: true });
     } catch (e) {
-        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
+        console.error(e);
+        return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

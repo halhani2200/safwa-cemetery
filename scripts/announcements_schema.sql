@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS announcements (
     condolence_men TEXT,
     condolence_women TEXT,
     grave_id INTEGER,
+    source TEXT,
+    source_ref TEXT,
     is_active INTEGER DEFAULT 1,
     expires_at TEXT,
     notification_sent INTEGER DEFAULT 0,
@@ -20,6 +22,7 @@ CREATE TABLE IF NOT EXISTS announcements (
 );
 
 CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_announcements_source_ref ON announcements(source_ref);
 
 -- Web Push subscriptions
 CREATE TABLE IF NOT EXISTS push_subscriptions (

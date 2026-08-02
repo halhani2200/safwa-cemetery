@@ -70,6 +70,11 @@ workflows:
           cd app
           node scripts/force-ios-iphone-only.js
 
+      - name: Enable iOS push entitlement
+        script: |
+          cd app
+          node scripts/enable-ios-push.js
+
       - name: Patch Info.plist (privacy strings, encryption flag, unique build number)
         script: |
           cd app/ios/App/App
@@ -154,6 +159,7 @@ workflows:
         script: |
           cd app
           node scripts/force-ios-iphone-only.js
+          node scripts/enable-ios-push.js
 
       - name: Build signed IPA
         script: |

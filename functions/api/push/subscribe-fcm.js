@@ -1,6 +1,6 @@
 import { jsonResponse } from '../../_lib/auth.js';
 
-// Public endpoint — users can subscribe their device for FCM push from native app
+// Public endpoint: native app stores Android FCM tokens and iOS APNs tokens.
 export async function onRequestPost(context) {
     const { request, env } = context;
     try {
@@ -16,19 +16,20 @@ export async function onRequestPost(context) {
             return jsonResponse({ error: 'invalid platform' }, 400);
         }
 
-        // Upsert — same token means same device (FCM tokens are stable per install)
         await env.DB.prepare(`
-            INSERT INTO fcm_tokens (token, platform, app_version, last_seen_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO fcm_tokens (token, platform, app_version, last_seen_at, failure_count)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)
             ON CONFLICT(token) DO UPDATE SET
                 platform = excluded.platform,
                 app_version = excluded.app_version,
-                last_seen_at = CURRENT_TIMESTAMP
+                last_seen_at = CURRENT_TIMESTAMP,
+                failure_count = 0
         `).bind(token, platform, appVersion).run();
 
         return jsonResponse({ ok: true });
     } catch (e) {
-        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
+        console.error(e);
+        return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -41,6 +42,7 @@ export async function onRequestDelete(context) {
         await env.DB.prepare('DELETE FROM fcm_tokens WHERE token = ?').bind(token).run();
         return jsonResponse({ ok: true });
     } catch (e) {
-        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
+        console.error(e);
+        return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

@@ -137,3 +137,56 @@ CREATE TABLE IF NOT EXISTS error_reports (
 
 CREATE INDEX IF NOT EXISTS idx_error_reports_status ON error_reports(status);
 CREATE INDEX IF NOT EXISTS idx_error_reports_grave ON error_reports(grave_id);
+
+-- Current public/admin death announcements table used by functions/api/announcements.js.
+CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deceased_name TEXT NOT NULL,
+    kunya TEXT,
+    family TEXT,
+    message TEXT,
+    funeral_info TEXT,
+    burial_info TEXT,
+    condolence_men TEXT,
+    condolence_women TEXT,
+    grave_id INTEGER,
+    source TEXT,
+    source_ref TEXT,
+    is_active INTEGER DEFAULT 1,
+    expires_at TEXT,
+    notification_sent INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER,
+    FOREIGN KEY (grave_id) REFERENCES graves(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_announcements_active_current ON announcements(is_active, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_announcements_source_ref ON announcements(source_ref);
+
+-- Web Push subscriptions.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    user_agent TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TEXT,
+    failure_count INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_subs_endpoint ON push_subscriptions(endpoint);
+
+-- Native app device tokens. Android stores FCM tokens; iOS stores APNs tokens.
+CREATE TABLE IF NOT EXISTS fcm_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL UNIQUE,
+    platform TEXT,
+    app_version TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    failure_count INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_fcm_tokens_token ON fcm_tokens(token);

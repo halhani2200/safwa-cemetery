@@ -1,5 +1,6 @@
 import { jsonResponse, getUserFromSession, requireAuth, logAudit } from '../_lib/auth.js';
 import { sendPushToAll } from '../_lib/webpush.js';
+import { sendNativePushToAll } from '../_lib/native-push.js';
 
 // GET: list announcements
 // - Admin sees all (active + inactive + expired)
@@ -11,7 +12,7 @@ export async function onRequestGet(context) {
     try {
         let sql;
         if (user && user.role === 'admin') {
-            sql = `SELECT * FROM announcements ORDER BY created_at DESC LIMIT 200`;
+            sql = 'SELECT * FROM announcements ORDER BY created_at DESC LIMIT 200';
         } else {
             const now = new Date().toISOString();
             sql = `SELECT id, deceased_name, kunya, family, message, funeral_info, burial_info,
@@ -23,7 +24,8 @@ export async function onRequestGet(context) {
         const result = await env.DB.prepare(sql).all();
         return jsonResponse({ count: result.results.length, results: result.results });
     } catch (e) {
-        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
+        console.error(e);
+        return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }
 
@@ -63,22 +65,33 @@ export async function onRequestPost(context) {
         const id = result.meta.last_row_id;
         await logAudit(env, auth.user.id, 'create', 'announcement', id, { name: body.deceased_name }, request);
 
-        // Optionally send push notification
         let pushResult = null;
         if (body.send_notification) {
             const payload = {
                 title: 'إعلان وفاة',
-                body: `إنا لله وإنا إليه راجعون — ${body.deceased_name}${body.kunya ? ' (' + body.kunya + ')' : ''}`,
+                body: `إنا لله وإنا إليه راجعون - ${body.deceased_name}${body.kunya ? ' (' + body.kunya + ')' : ''}`,
                 url: '/',
                 tag: `announcement-${id}`,
                 announcement_id: id
             };
-            pushResult = await sendPushToAll(env, payload);
+            const [web, native] = await Promise.all([
+                sendPushToAll(env, payload).catch(e => ({ sent: 0, failed: 0, removed: 0, error: e.message })),
+                sendNativePushToAll(env, {
+                    title: payload.title,
+                    body: payload.body
+                }, { url: payload.url, type: 'announcement', announcement_id: id })
+            ]);
+            pushResult = {
+                web,
+                native,
+                total_sent: (web.sent || 0) + (native.total_sent || 0)
+            };
             await env.DB.prepare('UPDATE announcements SET notification_sent = 1 WHERE id = ?').bind(id).run();
         }
 
         return jsonResponse({ ok: true, id, push: pushResult });
     } catch (e) {
-        console.error(e); return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
+        console.error(e);
+        return jsonResponse({ error: 'حدث خطأ في الخادم' }, 500);
     }
 }

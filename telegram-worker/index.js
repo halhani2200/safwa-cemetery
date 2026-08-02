@@ -1,26 +1,15 @@
-// Safwa death-announcement sync from the "القطيف اليوم / صحيفة الخط" website.
-// Runs on a cron (every 10 min). The site is server-rendered (no client-side JS data
-// loading), so we fetch the homepage HTML and read the "وفيات" cards directly — no
-// Telegram needed (owner chose the website as the source instead of Telegram).
-//
-// Each obituary card looks like:
-//   <a class="cardNews ..." href="https://dreamcp.alqhat.com/home/518611/صفوى:-...">
-//     <img ...>
-//     <p class="title ...">صفوى: الشاب عادل علي حسين المغلق في ذمة الله</p>
-//     <p class="newsDate">24 مايو , 2026 08:12 ص</p>
-//   </a>
-//
-// Filter: town (before the colon) == "صفوى" AND the title contains "ذمة الله".
-// We store ONLY the name, in our own wording (we never copy the site's article).
-// Dedupe by the site's numeric article id  ->  source_ref = "alqhat:{id}".
+// Safwa death-announcement sync from the Al Qatif Today / Al Khat website.
+// Runs every 10 minutes, stores new Safwa obituary names, then asks the main
+// Pages API to send push notifications. Notifications are sent only for newly
+// inserted rows, so repeated cron runs do not duplicate alerts.
 
 const SOURCE = 'https://dreamcp.alqhat.com/';
+const NOTIFY_ENDPOINT = 'https://safwa-cemetery.com/api/push/internal-announcement';
 
 export default {
     async scheduled(event, env, ctx) {
         ctx.waitUntil(sync(env));
     },
-    // Manual trigger for testing/QA (idempotent — dedupe prevents duplicates).
     async fetch(request, env) {
         const out = await sync(env);
         return new Response(JSON.stringify(out, null, 2), {
@@ -30,12 +19,91 @@ export default {
 };
 
 function decodeEntities(s) {
-    return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
+    return s.replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, ' ')
         .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n));
 }
+
 function clean(html) {
-    return decodeEntities(html.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+    return decodeEntities(html.replace(/<[^>]+>/g, ' '))
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function extractSafwaObituaries(html) {
+    const cardRe = /<a\b([^>]*cardNews[^>]*)>([\s\S]*?)<\/a>/g;
+    const idRe = /\/home\/(\d+)\//;
+    const titleRe = /<p[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/p>/;
+    const items = [];
+    let scanned = 0;
+    let m;
+
+    while ((m = cardRe.exec(html))) {
+        const attrs = m[1];
+        const inner = m[2];
+        const idM = idRe.exec(attrs);
+        if (!idM) continue;
+        scanned += 1;
+
+        const titleMatch = titleRe.exec(inner);
+        if (!titleMatch) continue;
+
+        const text = clean(titleMatch[1]);
+        const colon = text.indexOf(':');
+        if (colon === -1) continue;
+
+        const town = text.slice(0, colon).trim();
+        if (!(town === 'صفوى' || town.startsWith('صفوى'))) continue;
+
+        const deathIndex = text.indexOf('ذمة الله');
+        if (deathIndex === -1 || deathIndex < colon) continue;
+
+        const name = text.substring(colon + 1, deathIndex)
+            .replace(/\s*في\s*$/, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (!name || name.length < 3 || name.length > 120) continue;
+
+        items.push({
+            name,
+            source_ref: `alqhat:${idM[1]}`
+        });
+    }
+
+    return { scanned, items };
+}
+
+async function notifyNewAnnouncement(env, item) {
+    const secret = String(env.PUSH_SYNC_SECRET || '').trim();
+    if (!secret) {
+        return { skipped: true, reason: 'PUSH_SYNC_SECRET not configured' };
+    }
+
+    try {
+        const resp = await fetch(NOTIFY_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${secret}`
+            },
+            body: JSON.stringify({
+                deceased_name: item.name,
+                source_ref: item.source_ref
+            })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            return { error: data.error || `http_${resp.status}` };
+        }
+        return data;
+    } catch (e) {
+        return { error: e.message };
+    }
 }
 
 async function sync(env) {
@@ -51,55 +119,36 @@ async function sync(env) {
         return { error: 'fetch_error' };
     }
 
-    // Match each <a ...cardNews...> ... </a>. Attribute order is not assumed:
-    // the id comes from the /home/{id}/ href, the text from the inner <p class="title">.
-    const cardRe = /<a\b([^>]*cardNews[^>]*)>([\s\S]*?)<\/a>/g;
-    const idRe = /\/home\/(\d+)\//;
-    const titleRe = /<p[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/p>/;
-
-    const stmts = [];
-    let scanned = 0, candidates = 0, m;
-    while ((m = cardRe.exec(html))) {
-        const attrs = m[1], inner = m[2];
-        const idM = idRe.exec(attrs);
-        if (!idM) continue;
-        scanned++;
-        const id = idM[1];
-        const tm = titleRe.exec(inner);
-        if (!tm) continue;
-        const text = clean(tm[1]);
-        if (!text) continue;
-
-        const colon = text.indexOf(':');
-        if (colon === -1) continue;
-        const town = text.slice(0, colon).trim();
-        if (!(town === 'صفوى' || town.startsWith('صفوى'))) continue;   // Safwa only
-
-        const death = text.indexOf('ذمة الله');
-        if (death === -1 || death < colon) continue;                    // death announcement only
-
-        let name = text.substring(colon + 1, death)
-            .replace(/\s*في\s*$/, '')      // drop the trailing "في" of "في ذمة الله"
-            .replace(/\s+/g, ' ').trim();
-        if (!name || name.length < 3 || name.length > 120) continue;
-
-        candidates++;
-        const ref = 'alqhat:' + id;
-        stmts.push(env.DB.prepare(
-            `INSERT INTO announcements (deceased_name, source, source_ref, is_active)
-             SELECT ?, 'alqhat', ?, 1
-             WHERE NOT EXISTS (SELECT 1 FROM announcements WHERE source_ref = ?)`
-        ).bind(name, ref, ref));
-    }
-
+    const { scanned, items } = extractSafwaObituaries(html);
     let imported = 0;
-    if (stmts.length) {
+    const notifications = [];
+
+    for (const item of items) {
         try {
-            const res = await env.DB.batch(stmts);
-            imported = res.reduce((a, r) => a + ((r.meta && r.meta.changes) || 0), 0);
+            const res = await env.DB.prepare(
+                `INSERT INTO announcements (deceased_name, source, source_ref, is_active)
+                 SELECT ?, 'alqhat', ?, 1
+                 WHERE NOT EXISTS (SELECT 1 FROM announcements WHERE source_ref = ?)`
+            ).bind(item.name, item.source_ref, item.source_ref).run();
+
+            const changes = (res.meta && res.meta.changes) || 0;
+            if (changes > 0) {
+                imported += 1;
+                notifications.push({
+                    source_ref: item.source_ref,
+                    ...(await notifyNewAnnouncement(env, item))
+                });
+            }
         } catch (e) {
-            return { error: 'db_error', scanned, candidates };
+            return { error: 'db_error', scanned, candidates: items.length, imported };
         }
     }
-    return { ok: true, scanned, candidates, imported };
+
+    return {
+        ok: true,
+        scanned,
+        candidates: items.length,
+        imported,
+        notifications
+    };
 }
