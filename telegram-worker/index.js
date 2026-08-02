@@ -1,7 +1,7 @@
 // Safwa death-announcement sync from the Al Qatif Today / Al Khat website.
 // Runs every 10 minutes, stores new Safwa obituary names, then asks the main
-// Pages API to send push notifications. Notifications are sent only for newly
-// inserted rows, so repeated cron runs do not duplicate alerts.
+// Pages API to send push notifications. Successfully delivered notifications
+// are marked in D1; transient failures are retried on the next cron run.
 
 const SOURCE = 'https://dreamcp.alqhat.com/';
 const NOTIFY_ENDPOINT = 'https://safwa-cemetery.com/api/push/internal-announcement';
@@ -106,6 +106,10 @@ async function notifyNewAnnouncement(env, item) {
     }
 }
 
+function notificationDelivered(result) {
+    return Boolean(result && result.ok && Number(result.total_sent || 0) > 0);
+}
+
 async function sync(env) {
     let html;
     try {
@@ -126,22 +130,53 @@ async function sync(env) {
     for (const item of items) {
         try {
             const res = await env.DB.prepare(
-                `INSERT INTO announcements (deceased_name, source, source_ref, is_active)
-                 SELECT ?, 'alqhat', ?, 1
-                 WHERE NOT EXISTS (SELECT 1 FROM announcements WHERE source_ref = ?)`
-            ).bind(item.name, item.source_ref, item.source_ref).run();
+                `INSERT OR IGNORE INTO announcements
+                    (deceased_name, source, source_ref, is_active, notification_sent)
+                 VALUES (?, 'alqhat', ?, 1, 0)`
+            ).bind(item.name, item.source_ref).run();
 
             const changes = (res.meta && res.meta.changes) || 0;
             if (changes > 0) {
                 imported += 1;
-                notifications.push({
-                    source_ref: item.source_ref,
-                    ...(await notifyNewAnnouncement(env, item))
-                });
             }
         } catch (e) {
             return { error: 'db_error', scanned, candidates: items.length, imported };
         }
+    }
+
+    // Retry pending notifications after imports. This avoids losing an alert
+    // when the Pages API or a push provider is temporarily unavailable.
+    let pendingRows;
+    try {
+        pendingRows = await env.DB.prepare(
+            `SELECT id, deceased_name, source_ref
+             FROM announcements
+             WHERE source = 'alqhat' AND notification_sent = 0
+             ORDER BY id ASC
+             LIMIT 20`
+        ).all();
+    } catch (e) {
+        return { error: 'pending_query_error', scanned, candidates: items.length, imported };
+    }
+
+    for (const row of pendingRows.results || []) {
+        const result = await notifyNewAnnouncement(env, {
+            name: row.deceased_name,
+            source_ref: row.source_ref
+        });
+        const delivered = notificationDelivered(result);
+
+        if (delivered) {
+            await env.DB.prepare(
+                'UPDATE announcements SET notification_sent = 1 WHERE id = ?'
+            ).bind(row.id).run();
+        }
+
+        notifications.push({
+            source_ref: row.source_ref,
+            delivered,
+            ...result
+        });
     }
 
     return {
