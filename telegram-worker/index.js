@@ -3,7 +3,7 @@
 // Pages API to send push notifications. Successfully delivered notifications
 // are marked in D1; transient failures are retried on the next cron run.
 
-const SOURCE = 'https://dreamcp.alqhat.com/';
+const SOURCE = 'https://alqhat.com/';
 const NOTIFY_ENDPOINT = 'https://safwa-cemetery.com/api/push/internal-announcement';
 
 export default {
@@ -117,7 +117,17 @@ async function sync(env) {
             headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SafwaCemetery/1.0)' },
             cf: { cacheTtl: 0 }
         });
-        if (!r.ok) return { error: 'fetch_failed', status: r.status };
+        if (!r.ok) {
+            const preview = (await r.text()).replace(/\s+/g, ' ').slice(0, 240);
+            return {
+                error: 'fetch_failed',
+                status: r.status,
+                source: SOURCE,
+                final_url: r.url,
+                content_type: r.headers.get('content-type') || '',
+                preview
+            };
+        }
         html = await r.text();
     } catch (e) {
         return { error: 'fetch_error' };
